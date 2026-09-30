@@ -1,0 +1,394 @@
+Create a MOBILE APP prototype for a personal life, work, and money management application.
+
+IMPORTANT:
+I have provided a reference prototype/design. Use the reference prototype as the main visual design direction.
+
+Do NOT create a completely different visual style.
+
+Follow the reference prototype's:
+
+* Color palette
+* Theme
+* Typography style
+* Visual hierarchy
+* Button styles
+* Card styles
+* Border radius
+* Spacing
+* Icons style
+* Navigation style
+* Overall mood and personality
+
+The new application should feel like it belongs to the SAME DESIGN SYSTEM as the reference prototype.
+
+Do not introduce a new color palette unless necessary. Reuse the colors and visual language from the reference.
+
+This is primarily a MOBILE APP UI/UX PROTOTYPE. Design for a phone screen first, not a desktop website.
+
+## App Concept
+
+The app helps the user organize their everyday life, work, working hours, salary, income, and expenses in one place.
+
+The main areas are:
+
+1. Home
+2. Tasks
+3. Work
+4. Money
+5. Calendar
+
+---
+
+# 1. Home
+
+Create a personalized home screen that gives the user a quick overview of their day.
+
+Show:
+
+* Greeting
+* Today's date
+* Today's tasks
+* Current work status
+* Clock In / Clock Out action
+* Today's working hours
+* Today's estimated salary
+* Current balance
+
+The most important information should be visible without making the screen feel crowded.
+
+Example:
+
+"Good morning 👋"
+
+Today's Tasks
+2 of 5 completed
+
+Work
+Not clocked in
+
+[ Clock In ]
+
+Today's earnings
+$42
+
+Balance
+$350
+
+Use the reference design's card and component style.
+
+---
+
+# 2. Tasks
+
+Create a mobile-friendly task management screen.
+
+The user can:
+
+* Add a task
+* Edit a task
+* Delete a task
+* Mark a task as completed
+* Set a due date
+* Set priority
+
+Organize tasks into:
+
+* Today
+* Upcoming
+* Completed
+
+Each task should be visually simple and easy to check off.
+
+Include a clear "+" button or equivalent action for adding a task.
+
+---
+
+# 3. Work
+
+Create a Work section where the user can manage multiple jobs.
+
+The user can have more than one job.
+
+For example:
+
+Job 1:
+"Coffee Shop"
+
+Normal rate: $5/hour
+Overtime rate: $7/hour
+
+Job 2:
+"Freelance"
+
+Normal rate: $8/hour
+Overtime rate: $10/hour
+
+Allow the user to select which job they are currently working at.
+
+Each job should have its own:
+
+* Hourly rates
+* Work history
+* Working hours
+* Salary calculations
+* Days worked
+* Days off
+
+---
+
+# 4. Clock In / Clock Out
+
+Make Clock In / Clock Out one of the easiest actions to access.
+
+When the user arrives at work:
+
+[ Clock In ]
+
+Start a live timer showing:
+
+09:02 AM
+02:35:18 working
+
+When the user leaves:
+
+[ Clock Out ]
+
+Then show a summary:
+
+Today's work session
+
+Clock in:
+09:02 AM
+
+Clock out:
+05:15 PM
+
+Normal hours:
+8h
+
+Overtime:
+15m
+
+Estimated earnings:
+$40.35
+
+The user should be able to see their work status immediately.
+
+---
+
+# 5. Work History
+
+For each job, show previous work sessions.
+
+Each record should display:
+
+Date
+Clock in
+Clock out
+Total hours
+Normal hours
+Overtime
+Daily earnings
+
+Add filters for:
+
+* Day
+* Week
+* Month
+
+Show summaries such as:
+
+This week
+38h 20m
+
+Estimated earnings
+$192
+
+---
+
+# 6. Calendar
+
+Create a mobile calendar screen.
+
+The user can see:
+
+* Work days
+* Days off
+* Vacation
+* Sick days
+
+Allow the user to mark a day as a day off or another status.
+
+Use visual indicators that match the reference prototype's design language.
+
+---
+
+# 7. Money
+
+Create a simple personal finance section.
+
+Separate it into:
+
+INCOME
+
+and
+
+EXPENSES
+
+## Income
+
+The user can add money they received.
+
+Each record:
+
+* Amount
+* Source
+* Category
+* Date
+* Note
+
+Examples:
+
+Salary
+Freelance
+Gift
+Other
+
+## Expenses
+
+The user can add money they spent.
+
+Each record:
+
+* Amount
+* What it was spent on
+* Category
+* Date
+* Note
+
+Examples:
+
+Food
+Transportation
+Shopping
+Bills
+Other
+
+---
+
+# 8. Balance
+
+Automatically show:
+
+Total Income
+
+* Total Expenses
+  = Remaining Balance
+
+Example:
+
+Income
+$650
+
+Expenses
+$240
+
+Remaining
+$410
+
+Make the remaining balance easy to find but keep the screen visually consistent with the reference design.
+
+---
+
+# 9. Mobile Navigation
+
+Use a mobile-first navigation system.
+
+Prefer a bottom navigation bar if it fits the reference design.
+
+Suggested navigation:
+
+Home
+Tasks
+Work
+Money
+Calendar
+
+Use icons and labels consistent with the reference prototype.
+
+---
+
+# 10. Screens to Prototype
+
+Create the following main screens:
+
+1. Home
+2. Tasks
+3. Add Task
+4. Work / Jobs
+5. Job Details
+6. Clock In state
+7. Clock Out / Work Session Summary
+8. Work History
+9. Calendar
+10. Money Overview
+11. Income
+12. Add Income
+13. Expenses
+14. Add Expense
+15. Settings / Profile
+
+Create the necessary interactions between these screens so the prototype feels like a real mobile application.
+
+---
+
+# 11. Prototype Behavior
+
+This should feel like a real interactive mobile app prototype.
+
+For example:
+
+Home → Clock In → Working State → Clock Out → Work Summary
+
+Home → Tasks → Add Task → Task appears in Today's Tasks
+
+Work → Select Job → Job Details → Work History
+
+Money → Income → Add Income → Income appears in list
+
+Money → Expenses → Add Expense → Expense appears in list
+
+Calendar → Select Day → Mark as Day Off
+
+Use realistic sample data so the screens don't look empty.
+
+---
+
+# 12. Design Rules
+
+The reference prototype is the source of truth for the visual design.
+
+Prioritize consistency over adding visual effects.
+
+DO:
+
+* Reuse the reference colors
+* Reuse the reference typography style
+* Reuse the reference component style
+* Reuse its spacing and visual hierarchy
+* Keep the interface clean
+* Keep it mobile-first
+* Make important actions easy to find
+
+DO NOT:
+
+* Create a completely new theme
+* Use random colors
+* Make it look like an enterprise HR dashboard
+* Add unnecessary features
+* Turn it into a desktop dashboard
+* Overcrowd the screens
+
+The final result should look like a natural extension of the reference prototype, but for a personal life/work/money management application.
+
+Focus primarily on polished UI/UX and a convincing mobile prototype rather than backend complexity.

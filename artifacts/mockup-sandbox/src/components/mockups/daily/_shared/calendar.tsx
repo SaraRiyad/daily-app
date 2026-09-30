@@ -1,0 +1,20 @@
+import { useState } from "react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
+import { JOBS, dateLabel, dayKey, parseDay, statusFor } from "./model";
+import type { Data, DayStatus, JobId } from "./model";
+import { InfoNote, JobSelect } from "./ui";
+
+const statuses: DayStatus[] = ["Work", "Day off", "Vacation", "Sick"];
+const statusClass: Record<DayStatus, string> = { Work: "work", "Day off": "off", Vacation: "vacation", Sick: "sick" };
+export function Calendar({ data, setData, selectJob }: { data: Data; setData: Dispatch<SetStateAction<Data>>; selectJob: (id: JobId) => void }) {
+  const [selected, setSelected] = useState(dayKey());
+  const [month, setMonth] = useState(() => { const d = new Date(); d.setDate(1); return dayKey(d); });
+  const [saved, setSaved] = useState(false);
+  const first = parseDay(month), year = first.getFullYear(), monthIndex = first.getMonth(), count = new Date(year, monthIndex + 1, 0).getDate();
+  const offset = (first.getDay() + 6) % 7;
+  const job = JOBS.find(j => j.id === data.selectedJob)!;
+  const status = statusFor(data, job.id, selected);
+  const move = (dir: number) => { const d = parseDay(month); d.setMonth(d.getMonth() + dir); setMonth(dayKey(d)); setSelected(dayKey(d)); setSaved(false); };
+  return <><h2 className="dy-heading">Room for work. And life.</h2><p className="dy-subtitle">See your rhythm, one month at a time.</p><label className="dy-field" style={{ marginTop: 0 }}>Calendar for<JobSelect value={job.id} onChange={id => { selectJob(id); setSaved(false); }} disabled={!!data.active} /></label>{data.active && <p className="dy-form-help">Clock out to switch to another job's calendar.</p>}<div className="dy-calendar"><div className="dy-period"><button aria-label="Previous month" className="dy-icon-button" onClick={() => move(-1)}><ChevronLeft /></button><strong style={{ fontWeight: 500, fontSize: 17 }}>{first.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</strong><button aria-label="Next month" className="dy-icon-button" onClick={() => move(1)}><ChevronRight /></button></div><div className="dy-calendar-grid">{["M", "T", "W", "T", "F", "S", "S"].map((d, i) => <span key={i} className="dy-weekday" aria-hidden>{d}</span>)}{Array.from({ length: offset }, (_, i) => <span key={`space-${i}`} />)}{Array.from({ length: count }, (_, i) => { const date = dayKey(new Date(year, monthIndex, i + 1)), dayStatus = statusFor(data, job.id, date); return <button key={date} className={`dy-day${date === dayKey() ? " today" : ""}${date === selected ? " selected" : ""}`} onClick={() => { setSelected(date); setSaved(false); }} aria-pressed={selected === date} aria-current={date === dayKey() ? "date" : undefined} aria-label={`${dateLabel(date, true)}${dayStatus ? `, ${dayStatus}` : ", not planned"}`}>{i + 1}{dayStatus && <span className={`dy-mark ${statusClass[dayStatus]}`} />}</button>; })}</div></div><div className="dy-legend" aria-label="Calendar legend">{statuses.map(s => <span key={s}><i className={`dy-mark ${statusClass[s]}`} />{s === "Work" ? "Work day" : s}</span>)}</div><div className="dy-card"><div className="dy-kicker">{job.name}</div><h3 style={{ fontSize: 18, margin: "5px 0 3px", fontWeight: 500 }}>{dateLabel(selected, true)}</h3><p className="dy-small dy-muted" style={{ margin: 0 }}>How does this day look?</p><div className="dy-status-options">{statuses.map(s => <button key={s} className={status === s ? "active" : ""} aria-pressed={status === s} onClick={() => { setData(d => ({ ...d, days: { ...d.days, [`${job.id}:${selected}`]: s } })); setSaved(true); }}>{s}</button>)}</div>{saved ? <div className="dy-save-status" role="status"><Check />Day updated for {job.name}</div> : <p className="dy-form-help" style={{ margin: 0 }}>{status ? `Currently marked ${status.toLowerCase()}. Tap a status to change it.` : "Choose a status. Your plan saves automatically."}</p>}</div><InfoNote>Each job has its own calendar. Changing a day updates its job summary, but never changes recorded shifts or earnings.</InfoNote></>;
+}
