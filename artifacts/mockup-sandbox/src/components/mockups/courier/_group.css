@@ -1,0 +1,6 @@
+.cr-root{--coral:#f58f6c;--coral-d:#e8764f;--char:#2f3140;--ink:#2a2c38;--mut:#9a9ca8;--bg:#f7f4f2;--card:#f3f1ef;font-family:'Outfit','DM Sans',sans-serif;color:var(--ink)}
+.cr-root button:focus-visible,.cr-root input:focus-visible{outline:2px solid var(--coral);outline-offset:2px}
+.cr-screen{animation:crIn .32s ease both}
+@keyframes crIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.cr-toast{animation:crIn .2s ease both}
+@media (prefers-reduced-motion:reduce){.cr-screen,.cr-toast{animation:none}.cr-root *{transition:none!important}}
