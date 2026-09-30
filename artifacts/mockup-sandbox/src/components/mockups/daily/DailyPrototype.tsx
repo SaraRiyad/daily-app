@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, BatteryFull, BriefcaseBusiness, CalendarDays, CheckCheck, House, Plus, Signal, Sun, Wallet, Wifi } from "lucide-react";
-import { useDaily, uid } from "./_shared/model";
+import { uid } from "./_shared/model";
 import type { JobId, Screen, Session, Task } from "./_shared/model";
-import { Home } from "./_shared/home";
+import { JobsProvider, useJobsDaily, JobsHome as Home, JobsWork as Work, JobsDetail as JobDetail, JobsTimer as Timer, JobsSummary as Summary, JobsHistory as WorkHistory, JobsCalendar as Calendar } from "./_shared/WorkChoices";
 import { Tasks, TaskForm } from "./_shared/tasks";
-import { JobDetail, Summary, Timer, Work, WorkHistory } from "./_shared/work";
 import { MoneyForm, MoneyList, MoneyOverview } from "./_shared/money";
-import { Calendar } from "./_shared/calendar";
 import { Settings } from "./_shared/settings";
 import "./_group.css";
+import "./DailyPrototype.css";
 
 const navItems = [
   { screen: "home", name: "Home", icon: House },
@@ -20,8 +19,8 @@ const navItems = [
 const titles: Record<Screen, string> = { home: "Daily", tasks: "Your tasks", "task-form": "Add task", work: "Work & jobs", job: "Job details", timer: "Working now", summary: "Session summary", history: "Work history", calendar: "Your calendar", money: "Your money", income: "Income", expense: "Expenses", "income-form": "Add income", "expense-form": "Add expense", settings: "Your profile" };
 const parents: Partial<Record<Screen, Screen>> = { "task-form": "tasks", job: "work", timer: "work", summary: "work", history: "job", income: "money", expense: "money", "income-form": "income", "expense-form": "expense", settings: "home" };
 export function DailyPrototype() {
-  const { data, setData, now, storageError, retryStorage } = useDaily();
-  const [screen, setScreen] = useState<Screen>("home");
+  const { data, setData, jobs, saveJob, now, storageError, retryStorage } = useJobsDaily();
+  const [screen, setScreen] = useState<Screen>(() => new URLSearchParams(window.location.search).get("view") === "work" ? "work" : "home");
   const [editing, setEditing] = useState<Task | null>(null);
   const [lastSession, setLastSession] = useState<Session | null>(null);
   const scroll = useRef<HTMLDivElement>(null);
@@ -40,7 +39,7 @@ export function DailyPrototype() {
   const activeTab = ["tasks", "task-form"].includes(screen) ? "tasks" : ["work", "job", "timer", "summary", "history"].includes(screen) ? "work" : ["money", "income", "expense", "income-form", "expense-form"].includes(screen) ? "money" : screen === "calendar" ? "calendar" : "home";
   const workProps = { data, now, go, selectJob, clockIn, clockOut };
   const initials = data.name.split(" ").filter(Boolean).map(n => n[0]).slice(0, 2).join("").toUpperCase();
-  return <div className="dy-root"><div className="dy-phone">
+  return <div className="dy-root"><div className="dy-phone"><JobsProvider jobs={jobs} data={data} saveJob={saveJob} selectJob={selectJob}>
     <div className="dy-status" aria-hidden="true"><span>{new Date(now).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: false })}</span><span><Signal /><Wifi /><BatteryFull /></span></div>
     <header className="dy-top">
       {screen === "home" ? <div className="dy-brand"><Sun strokeWidth={1.8} />daily<span style={{ color: "#f58f6c" }}>.</span></div> : <><button aria-label={`Back to ${titles[parents[screen] || "home"]}`} className="dy-icon-button" onClick={() => go(parents[screen] || "home")}><ArrowLeft /></button><h1>{screen === "task-form" && editing ? "Edit task" : titles[screen]}</h1></>}
@@ -63,5 +62,5 @@ export function DailyPrototype() {
       {screen === "settings" && <Settings data={data} setData={setData} />}
     </div></main>
     <nav className="dy-nav" aria-label="Main navigation">{navItems.map(({ screen: next, name, icon: Icon }) => <button key={next} className={activeTab === next ? "active" : ""} aria-current={activeTab === next ? "page" : undefined} onClick={() => go(next)}><span className="dy-nav-icon"><Icon /></span>{name}</button>)}</nav>
-  </div></div>;
+  </JobsProvider></div></div>;
 }
