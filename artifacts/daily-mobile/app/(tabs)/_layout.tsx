@@ -7,7 +7,7 @@ import { theme as c, fonts } from '@/constants/colors';
 
 export default function TabLayout() {
   const { data } = useDaily(), insets = useDailyInsets();
-  if (!data.entered) return <Redirect href="/" />;
+  if (!data.entered) return <Redirect href={{ pathname: '/', params: { step: 'signin' } }} />;
   return <Tabs screenOptions={{
     headerShown: false, tabBarActiveTintColor: c.accentForeground, tabBarInactiveTintColor: c.mutedForeground,
     tabBarStyle: { backgroundColor: c.card, borderTopColor: c.border, paddingTop: 8, ...(Platform.OS === 'web' ? { height: 84 } : { height: 66 + insets.bottom, paddingBottom: Math.max(insets.bottom, 5) }) },

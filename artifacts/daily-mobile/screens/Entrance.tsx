@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { BackHandler, Platform, Pressable, View } from 'react-native';
-import { Redirect, useFocusEffect } from 'expo-router';
+import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useDailyInsets } from '@/hooks/useDailyInsets';
 import { theme as c, fonts } from '@/constants/colors';
 import { useDaily } from '@/state/DailyContext';
@@ -12,13 +12,17 @@ import { Brand, Button, Card, Field, Icon, IconButton, JobIcon, Note, Txt, s } f
 type Step = 'welcome' | 'signin' | 'signup' | 'jobs';
 export default function EntranceScreen() {
   const { data, update, error: storageError, retry } = useDaily(), insets = useDailyInsets();
-  const [step, setStep] = useState<Step>('welcome'), [name, setName] = useState(data.name === 'Alex' ? '' : data.name);
+  const { step: requestedStep } = useLocalSearchParams<{ step?: string }>();
+  const [step, setStep] = useState<Step>(requestedStep === 'signin' ? 'signin' : 'welcome'), [name, setName] = useState(data.name === 'Alex' ? '' : data.name);
   const [email, setEmail] = useState(''), [password, setPassword] = useState(''), [confirmation, setConfirmation] = useState('');
   const [show, setShow] = useState(false), [showConfirm, setShowConfirm] = useState(false), [error, setError] = useState(''), [adding, setAdding] = useState(false);
   const clearSecrets = () => { setPassword(''); setConfirmation(''); setEmail(''); setShow(false); setShowConfirm(false); };
   const move = (next: Step) => { clearSecrets(); setError(''); setStep(next); };
   const enter = () => { clearSecrets(); update(d => ({ ...d, entered: true })); };
   useFocusEffect(useCallback(() => () => { setPassword(''); setConfirmation(''); setEmail(''); setShow(false); setShowConfirm(false); }, []));
+  useFocusEffect(useCallback(() => {
+    if (requestedStep === 'signin') setStep('signin');
+  }, [requestedStep]));
   useFocusEffect(useCallback(() => {
     if (Platform.OS !== 'android') return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {

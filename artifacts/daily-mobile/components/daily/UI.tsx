@@ -29,10 +29,16 @@ export function Metric({ label, value, dark = false }: { label: string; value: s
 export function DetailRow({ label, value }: { label: string; value: string }) { return <View style={[s.between, { gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: c.border }]}><Txt muted style={{ fontSize: 13, flex: 1 }}>{label}</Txt><Txt style={{ fontSize: 14, fontFamily: fonts.medium, flexShrink: 1, textAlign: 'right' }}>{value}</Txt></View>; }
 export function JobIcon({ job }: { job: Pick<Job, 'icon'> }) { return <View style={[s.jobIcon, job.icon === 'laptop' && { backgroundColor: c.secondary }]}>{job.icon === 'store' || job.icon === 'laptop' ? <MaterialCommunityIcons name={job.icon === 'store' ? 'storefront-outline' : 'laptop'} size={23} color={c.foreground} /> : <Icon name={job.icon} color={c.accentForeground} size={22} />}</View>; }
 export function Page({ title, children, home = false, back = false, right }: { title?: string; children: React.ReactNode; home?: boolean; back?: boolean; right?: React.ReactNode }) {
-  const insets = useDailyInsets(), { data, error, retry } = useDaily();
+  const insets = useDailyInsets(), { data, update, error, retry } = useDaily();
   return <View style={[s.page, { paddingTop: insets.top }]}>
     <View style={s.header}>{home ? <Brand /> : <View style={[s.row, { flex: 1 }]}>{back && <IconButton name="arrow-left" label="Go back" onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} />}<Txt style={s.section}>{title}</Txt></View>}
       {right || (home ? <Pressable onPress={() => go('profile')} accessibilityRole="button" accessibilityLabel="Open profile" testID="open-profile" style={s.avatar}><Txt style={{ fontFamily: fonts.medium }}>{data.name.split(' ').filter(Boolean).slice(0, 2).map(v => v[0]).join('').toUpperCase()}</Txt></Pressable> : null)}
+    </View>
+    <View style={{ paddingHorizontal: 20, paddingBottom: 10 }}>
+      <Button secondary icon="arrow-left" testID="back-to-signin" onPress={() => {
+        update(d => ({ ...d, entered: false }));
+        router.replace({ pathname: '/', params: { step: 'signin' } });
+      }}>Back to sign in</Button>
     </View>
     {Boolean(error) && <View style={{ paddingHorizontal: 20 }}><Note error>{error}</Note><Button secondary onPress={retry}>Retry saving</Button></View>}
     <KeyboardAwareScrollViewCompat bottomOffset={24} showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" contentContainerStyle={[s.content, { paddingBottom: 28 + (back ? insets.bottom : 0) }]}>{children}</KeyboardAwareScrollViewCompat>
