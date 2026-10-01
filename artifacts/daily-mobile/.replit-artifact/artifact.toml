@@ -1,0 +1,24 @@
+kind = "mobile"
+previewPath = "/"
+title = "Daily — Android app"
+description = "An Android-focused personal life, work, and money app preserving the Daily prototype design. Tasks, multiple jobs, work timers and overtime, income and expenses, calendar statuses, and job exports and deletion. Browser/phone-local demo accounts with password-field previews, no real authentication."
+version = "1.0.0"
+id = "artifacts/daily-mobile"
+router = "expo-domain"
+
+[[services]]
+name = "expo"
+ensurePreviewReachable = "/status"
+paths = [ "/" ]
+localPort = 19385
+
+[services.development]
+run = "pnpm --filter @workspace/daily-mobile run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/daily-mobile", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/daily-mobile", "run", "serve" ]
+
+[services.env]
+PORT = "19385"
+BASE_PATH = "/"

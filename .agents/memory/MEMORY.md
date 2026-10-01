@@ -1,0 +1,1 @@
+- [Delegation brief delivery](delegation-brief-delivery.md) — use a brief file if a large inline subagent call fails before dispatch.
