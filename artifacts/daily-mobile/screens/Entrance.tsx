@@ -67,7 +67,6 @@ export default function EntranceScreen() {
         {step === 'signup' && <View style={{ position: 'relative' }}><Field label="Confirm made-up password" value={confirmation} onChangeText={setConfirmation} placeholder="Same made-up password" secureTextEntry={!showConfirm} autoCorrect={false} autoCapitalize="none" autoComplete="off" textContentType="none" importantForAutofill="no" maxLength={128} style={{ paddingRight: 56 }} /><View style={{ position: 'absolute', right: 4, bottom: 4 }}><IconButton name={showConfirm ? 'eye-off' : 'eye'} label={showConfirm ? 'Hide confirmation password' : 'Show confirmation password'} onPress={() => setShowConfirm(!showConfirm)} /></View></View>}
         {Boolean(error) && <Note error>{error}</Note>}<Button icon="arrow-right" onPress={submit} testID="submit-demo-account">{step === 'signin' ? 'Preview sign in' : 'Continue to your jobs'}</Button><Button secondary onPress={() => move(step === 'signin' ? 'signup' : 'signin')}>{step === 'signin' ? 'New here? Set up your space' : 'Already set up? Preview sign in'}</Button>
       </>}
-      <View style={{ marginTop: 'auto' }}><Note>Local demo on this device. No real sign-in or cross-device sync. Browser prototype records do not transfer into this app automatically.</Note></View>
     </KeyboardAwareScrollViewCompat>
     {adding && <JobForm onClose={() => setAdding(false)} />}
   </View>;
