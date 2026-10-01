@@ -3,8 +3,11 @@ import { Keyboard, Linking, Platform, Pressable, Switch, View } from 'react-nati
 import { fonts } from '@/constants/colors';
 import { useDailyUI } from '@/hooks/useDailyUI';
 import { useDailyTheme } from '@/hooks/useColors';
-import { useDaily } from '@/state/DailyContext';
+import { useDaily, useDailyEdit } from '@/state/DailyContext';
 import type { Preferences } from '@/state/model';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { exportJson, exportWorkspace } from '@/state/export';
+import { LEGACY_KEY } from '@/state/sync';
 import { Button, Card, Choices, DetailRow, Field, Icon, Note, Sheet, Txt, type IconName } from './UI';
 
 export function SettingsRow({ icon, title, description, onPress }: { icon: IconName; title: string; description: string; onPress: () => void }) {
@@ -30,6 +33,7 @@ export function ProfileAvatar({ color, size = 80 }: { color?: Preferences['avata
 }
 
 export function EditNameSheet({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  useDailyEdit();
   const { data, update } = useDaily();
   const [name, setName] = useState(data.name);
   const [error, setError] = useState('');
@@ -37,7 +41,7 @@ export function EditNameSheet({ onClose, onSaved }: { onClose: () => void; onSav
   const save = () => {
     const value = name.trim();
     if (!value || value.length > 60) { setError('Use a name between 1 and 60 characters, not just spaces.'); return; }
-    update(d => ({ ...d, name: value }));
+    if (!update(d => ({ ...d, name: value }))) { setError('Daily could not accept this change. Your previous name is kept. Check the sync error and try again.'); return; }
     Keyboard.dismiss();
     onSaved();
   };
@@ -52,7 +56,8 @@ export function EditNameSheet({ onClose, onSaved }: { onClose: () => void; onSav
 }
 
 export function AvatarSheet({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-  const { data, update } = useDaily();
+  useDailyEdit();
+  const { data, update, error } = useDaily();
   const [color, setColor] = useState(data.preferences.avatarColor);
   const { s } = useDailyUI();
   return <Sheet title="Your profile picture" onClose={onClose}>
@@ -63,17 +68,49 @@ export function AvatarSheet({ onClose, onSaved }: { onClose: () => void; onSaved
     </View>
     <Txt muted style={{ lineHeight: 22 }}>Photos aren’t connected yet. For now, choose a color for your initials — no camera or photo upload needed.</Txt>
     <Choices values={['Coral', 'Stone', 'Charcoal'] as const} value={color} onChange={setColor} />
-    <Button icon="check" onPress={() => { update(d => ({ ...d, preferences: { ...d.preferences, avatarColor: color } })); onSaved(); }}>Save avatar</Button>
+    {Boolean(error) && <Note error>{error}</Note>}
+    <Button icon="check" onPress={() => { if (update(d => ({ ...d, preferences: { ...d.preferences, avatarColor: color } }))) onSaved(); }}>Save avatar</Button>
     <Button secondary onPress={onClose}>Cancel</Button>
   </Sheet>;
 }
 
 export function AccountSheet({ onClose }: { onClose: () => void }) {
-  const { data } = useDaily();
+  const { data, account, syncStatus, error: syncError, legacy, legacyError, canImport, importLegacy, backupKey } = useDaily();
+  const [confirm, setConfirm] = useState(false), [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(''), [error, setError] = useState('');
+  const act = async (fn: () => Promise<string | void>) => {
+    if (busy) return;
+    setBusy(true); setError(''); setMessage('');
+    try { const result = await fn(); if (result) setMessage(result); }
+    catch (e) { setError(e instanceof Error ? e.message : 'The operation could not complete. Your data is unchanged.'); }
+    finally { setBusy(false); }
+  };
   return <Sheet title="Account information" onClose={onClose}>
-    <Card><DetailRow label="Name" value={data.name} /><DetailRow label="Storage" value="This device only" /><DetailRow label="Account connection" value="Not connected" /><DetailRow label="Email" value="Not saved" /></Card>
-    <Txt muted style={{ lineHeight: 22 }}>Daily currently uses a local workspace, not a connected account. Sign in is a local entry flow; it doesn’t verify an identity. Your workspace is not synced or backed up to a server.</Txt>
-    <Txt muted style={{ fontSize: 12, lineHeight: 18 }}>Clearing app data or uninstalling can remove what’s saved here. Logging out keeps it.</Txt>
+    <Card><DetailRow label="Name" value={data.name} /><DetailRow label="Storage" value="Private account database" /><DetailRow label="Sync" value={syncStatus} /><DetailRow label="Email" value={account?.email ?? ''} /></Card>
+    {Boolean(syncError) && <Note error>{syncError}</Note>}
+    <Txt muted style={{ fontSize: 12, lineHeight: 18 }}>All jobs, tasks, money, calendar, preferences and active shifts sync together. Pending changes stay in this account’s device outbox until the server confirms them. Clearing app data can remove unsynced changes.</Txt>
+    <Button secondary icon="download" disabled={busy} onPress={() => void act(() => exportWorkspace(data, account?.email ?? ''))}>Export full device workspace</Button>
+    {backupKey && <><Note>Your previous draft was preserved before the last server reload. It has not been merged into your account.</Note><Button secondary disabled={busy} icon="download" onPress={() => void act(async () => {
+      const raw = await AsyncStorage.getItem(backupKey);
+      if (!raw) throw new Error('The preserved backup could not be found on this device.');
+      return exportJson(raw);
+    })}>Export preserved conflict backup</Button></>}
+    {Boolean(legacyError) && <><Note error>{legacyError}</Note>{!legacy && <Button secondary disabled={busy} icon="download" onPress={() => void act(async () => {
+      const raw = await AsyncStorage.getItem(LEGACY_KEY);
+      if (!raw) throw new Error('The original legacy device backup could not be read.');
+      return exportJson(raw, 'daily-original-device-recovery.json');
+    })}>Export original recovery copy</Button>}</>}
+    {legacy && <>
+      <Note>{canImport ? 'Your original device workspace is still here. Importing copies its records, historical rates, IDs and running shift into this empty account. The original device backup stays untouched.' : 'Legacy device data is preserved untouched. It is not merged or uploaded automatically. Import is only available for an empty, fully synced account.'}</Note>
+      <Button secondary disabled={busy} icon="download" onPress={() => void act(() => exportWorkspace(legacy, 'Legacy device workspace'))}>Export original device backup</Button>
+      {canImport && (confirm ? <>
+        <Note error>Import this device’s complete workspace into {account?.email}? These may include old sample records. No records are merged or silently removed. The original backup is kept.</Note>
+        <Button disabled={busy} testID="confirm-import-device" onPress={() => void act(async () => { await importLegacy(); setConfirm(false); return 'Import queued. Check the sync status for server confirmation.'; })}>{busy ? 'Importing…' : 'Confirm import device data'}</Button>
+        <Button secondary disabled={busy} onPress={() => setConfirm(false)}>Cancel import</Button>
+      </> : <Button secondary disabled={busy} testID="import-device-data" onPress={() => setConfirm(true)}>Import device data</Button>)}
+    </>}
+    {Boolean(error) && <Note error>{error}</Note>}
+    {Boolean(message) && <Txt muted style={{ fontSize: 12, lineHeight: 18 }}>{message}</Txt>}
     <Button secondary onPress={onClose}>Done</Button>
   </Sheet>;
 }
@@ -85,7 +122,7 @@ export function AppSettingsSheet({ onClose, onManage }: { onClose: () => void; o
     <Card><View style={s.between}>
       <View style={{ flex: 1, gap: 5, paddingRight: 14 }}><Txt style={{ fontFamily: fonts.medium }}>Hide Home balance</Txt><Txt muted style={{ fontSize: 12, lineHeight: 18 }}>Keep the amount off Home. It’s still visible in Money.</Txt></View>
       <Switch accessibilityLabel="Hide Home balance" testID="hide-home-balance" value={data.preferences.hideHomeBalance}
-        onValueChange={hideHomeBalance => update(d => ({ ...d, preferences: { ...d.preferences, hideHomeBalance } }))}
+        onValueChange={hideHomeBalance => { update(d => ({ ...d, preferences: { ...d.preferences, hideHomeBalance } })); }}
         trackColor={{ false: c.border, true: c.primary }} thumbColor={c.card} />
     </View></Card>
     <Card><DetailRow label="Currency" value="Israeli shekel · ₪ (ILS)" /><DetailRow label="Overtime starts" value="After 8h / job / local day" /></Card>
@@ -121,7 +158,7 @@ export function AppearanceSheet({ onClose }: { onClose: () => void }) {
   return <Sheet title="Appearance" onClose={onClose}>
     <Txt muted style={{ lineHeight: 22 }}>A familiar space, in the light that suits you.</Txt>
     <Choices values={['Light', 'Dark', 'System'] as const} value={data.preferences.theme} onChange={theme => update(d => ({ ...d, preferences: { ...d.preferences, theme } }))} />
-    <Card><DetailRow label="Current appearance" value={isDark ? 'Dark' : 'Light'} /><Txt muted style={{ fontSize: 13, lineHeight: 20 }}>System follows your device’s appearance. Your choice applies across Daily and is saved on this device.</Txt></Card>
+    <Card><DetailRow label="Current appearance" value={isDark ? 'Dark' : 'Light'} /><Txt muted style={{ fontSize: 13, lineHeight: 20 }}>System follows your device’s appearance. Your choice applies across Daily and syncs with your account.</Txt></Card>
     <Button secondary onPress={onClose}>Done</Button>
   </Sheet>;
 }

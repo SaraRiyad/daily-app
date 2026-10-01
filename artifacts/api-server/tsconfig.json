@@ -10,6 +10,9 @@
   "include": ["src"],
   "references": [
     {
+      "path": "../../lib/daily-model"
+    },
+    {
       "path": "../../lib/db"
     },
     {

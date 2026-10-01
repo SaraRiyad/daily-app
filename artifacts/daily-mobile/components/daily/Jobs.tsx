@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { View, Pressable } from 'react-native';
 import { fonts } from '@/constants/colors';
 import { useDailyUI } from '@/hooks/useDailyUI';
-import { useDaily } from '@/state/DailyContext';
+import { useDaily, useDailyEdit } from '@/state/DailyContext';
 import { exportJob } from '@/state/export';
 import { jobSchema, money, uid, type Job } from '@/state/model';
 import { Button, Card, DetailRow, Field, Icon, JobIcon, Note, Sheet, Txt } from './UI';
 
 export function JobForm({ job, onClose, onSaved }: { job?: Job; onClose: () => void; onSaved?: () => void }) {
+  useDailyEdit();
   const { c, s } = useDailyUI();
   const { data, saveJob } = useDaily();
   const [name, setName] = useState(job?.name || ''), [description, setDescription] = useState(job?.description || '');
@@ -18,7 +19,8 @@ export function JobForm({ job, onClose, onSaved }: { job?: Job; onClose: () => v
     const result = jobSchema.safeParse({ id: job?.id || uid(), name: name.trim(), description: description.trim(), normal: Number(normal), overtime: Number(overtime), icon });
     if (!result.success) { setError('Add a name and rates from ₪0.01 to ₪100,000. Overtime must be at least the normal rate.'); return; }
     if (data.jobs.some(j => j.id !== job?.id && j.name.toLowerCase() === name.trim().toLowerCase())) { setError('You already have a job with this name. Try another.'); return; }
-    saveJob(result.data); onClose(); onSaved?.();
+    if (!saveJob(result.data)) { setError('Daily could not accept this edit. Check the 100-job limit and sync error. Your previous workspace and form are kept.'); return; }
+    onClose(); onSaved?.();
   };
   return <Sheet title={job ? 'Edit your job' : 'Make room for a new role'} onClose={onClose}>
     <Card style={{ backgroundColor: c.charcoal, borderColor: c.charcoal }}><View style={s.row}><JobIcon job={{ icon }} /><View style={{ flex: 1 }}><Txt style={{ color: c.onCharcoal, fontSize: 18, fontFamily: fonts.medium }}>{name.trim() || 'Your next chapter'}</Txt><Txt style={{ color: c.subtleOnCharcoal, fontSize: 12 }}>{description || 'Your hours and earnings, together.'}</Txt></View></View></Card>
@@ -51,6 +53,7 @@ export function JobPicker({ dark = false }: { dark?: boolean }) {
   </>;
 }
 export function DeleteJob({ initialId, onClose, onDeleted }: { initialId?: string; onClose: () => void; onDeleted?: () => void }) {
+  useDailyEdit();
   const { c, s } = useDailyUI();
   const { data, deleteJob } = useDaily();
   const [target, setTarget] = useState(initialId || ''), [accepted, setAccepted] = useState(false);
@@ -64,7 +67,7 @@ export function DeleteJob({ initialId, onClose, onDeleted }: { initialId?: strin
   return <Sheet title={job ? 'Before you say goodbye.' : 'Manage & delete jobs'} onClose={onClose}>
     {!job ? <><Txt muted>Keep what matters. Save a copy before removing a job.</Txt>{data.jobs.map(j => <Pressable key={j.id} onPress={() => { setTarget(j.id); setAccepted(false); setNotice(''); setError(''); }} accessibilityRole="button" accessibilityLabel={`Delete ${j.name}`} style={[s.card, s.row]}><JobIcon job={j} /><View style={{ flex: 1 }}><Txt style={{ fontFamily: fonts.medium }}>{j.name}</Txt><Txt muted style={{ fontSize: 12 }}>{data.sessions.filter(v => v.jobId === j.id).length} recorded shifts</Txt></View><Icon name="trash-2" color={c.destructive} /></Pressable>)}{!data.jobs.length && <Txt muted>There are no jobs to delete.</Txt>}</> : <>
       <View style={{ alignSelf: 'flex-start', backgroundColor: c.accent, padding: 16, borderRadius: 18 }}><Icon name="trash-2" color={c.destructive} size={28} /></View>
-      <Txt style={{ fontSize: 17, lineHeight: 25 }}>Delete {job.name}? Its rates, shifts and calendar entries will be permanently removed from this device.</Txt>
+      <Txt style={{ fontSize: 17, lineHeight: 25 }}>Delete {job.name}? Its rates, shifts and calendar entries will be permanently removed from your account when synced.</Txt>
       <Card><DetailRow label="Recorded shifts" value={String(data.sessions.filter(v => v.jobId === job.id).length)} /><DetailRow label="Calendar entries" value={String(data.days.filter(v => v.jobId === job.id).length)} /><DetailRow label="Tasks, money & other jobs" value="Kept unchanged" /></Card>
       {locked ? <><Note error>This job has a running shift. Clock out before exporting a complete record or deleting it.</Note><Button secondary onPress={onClose}>Keep job & return</Button></> : <>
         <Txt style={s.section}>A copy, just in case.</Txt><Txt muted style={{ lineHeight: 21 }}>Export all details, rates, raw sessions, daily hours, estimated earnings and calendar entries as JSON.</Txt>

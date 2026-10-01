@@ -18,6 +18,15 @@ export function jobExport(job: Job, data: Store) {
 export async function exportJob(job: Job, data: Store): Promise<string> {
   const text = JSON.stringify(jobExport(job, data), null, 2);
   const name = `daily-${job.name.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${dayKey()}.json`;
+  return exportJson(text, name);
+}
+export async function exportWorkspace(data: Store, email: string) {
+  return exportJson(JSON.stringify({
+    format: 'Daily workspace backup', version: 1, exportedAt: new Date().toISOString(),
+    email, workspace: data, note: 'May contain unsynced device changes. All jobs, tasks, money, history, calendar, preferences and the running shift are included.',
+  }, null, 2), `daily-workspace-${dayKey()}.json`);
+}
+export async function exportJson(text: string, name = `daily-preserved-backup-${dayKey()}.json`): Promise<string> {
   if (Platform.OS === 'web') {
     if (typeof document === 'undefined' || typeof URL.createObjectURL !== 'function') throw new Error('Downloads are not supported in this browser.');
     const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
@@ -29,6 +38,6 @@ export async function exportJob(job: Job, data: Store): Promise<string> {
   if (!(await Sharing.isAvailableAsync())) throw new Error('File sharing is unavailable on this device. Your job is unchanged.');
   const file = new File(Paths.cache, name);
   file.create({ overwrite: true }); file.write(text);
-  await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Save a copy of your Daily job', UTI: 'public.json' });
-  return 'Share sheet closed. Daily cannot tell whether you saved or cancelled. Verify your JSON copy before deleting.';
+  await Sharing.shareAsync(file.uri, { mimeType: 'application/json', dialogTitle: 'Save a copy of your Daily data', UTI: 'public.json' });
+  return 'Share sheet closed. Daily cannot tell whether you saved or cancelled. Verify your JSON copy before discarding data.';
 }

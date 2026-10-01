@@ -74,7 +74,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
         </Text>
 
         <Text style={[styles.message, { color: colors.mutedForeground }]}>
-          Daily couldn’t open this screen. Your saved workspace is still on this device. Try opening it again.
+          Daily couldn’t open this screen. Your account data and device outbox are not cleared by this error. Try opening it again.
         </Text>
 
         <Pressable

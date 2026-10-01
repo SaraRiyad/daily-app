@@ -5,8 +5,8 @@ import { JobDetailScreen, TimerScreen, SummaryScreen, HistoryScreen, CalendarScr
 import ProfileScreen from '@/screens/Profile';
 
 export default function DetailRoute() {
-  const params = useLocalSearchParams<{ view?: string; id?: string }>(), { data } = useDaily();
-  if (!data.entered) return <Redirect href="/" />;
+  const params = useLocalSearchParams<{ view?: string; id?: string }>(), { authenticated } = useDaily();
+  if (!authenticated) return <Redirect href="/" />;
   const { view, id } = params;
   switch (view) {
     case 'task-form': return <TaskFormScreen key={id || 'new'} id={id} />;

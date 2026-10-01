@@ -1,2 +1,3 @@
 - [Delegation brief delivery](delegation-brief-delivery.md) — use a brief file if a large inline subagent call fails before dispatch.
 - [Expo route parameters](expo-route-parameters.md) — avoid reserved navigation keys for application query parameters; they can silently redirect.
+- [Durable sync ownership](durable-sync-ownership.md) — server revisions do not protect unsynced drafts from other browser tabs.

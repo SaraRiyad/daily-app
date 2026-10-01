@@ -19,6 +19,11 @@ import * as SystemUI from 'expo-system-ui';
 import { DailyProvider, useDaily } from '@/state/DailyContext';
 import { StoreGate } from '@/components/daily/StoreGate';
 import { useDailyTheme } from '@/hooks/useColors';
+import { setBaseUrl, setAuthTokenGetter } from '@workspace/api-client-react';
+import { getBearer } from '@/state/session';
+
+setBaseUrl(process.env.EXPO_PUBLIC_DOMAIN ? `https://${process.env.EXPO_PUBLIC_DOMAIN}` : null);
+setAuthTokenGetter(getBearer);
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -26,7 +31,7 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
-  const { data } = useDaily();
+  const { authenticated } = useDaily();
   const { colors, isDark } = useDailyTheme();
   useEffect(() => {
     if (Platform.OS !== 'web') void SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
@@ -36,7 +41,7 @@ function RootLayoutNav() {
     <StatusBar style={isDark ? 'light' : 'dark'} />
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background }, animation: 'slide_from_right' }}>
       <Stack.Screen name="index" />
-      <Stack.Protected guard={data.entered}>
+      <Stack.Protected guard={authenticated}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="detail" />
       </Stack.Protected>

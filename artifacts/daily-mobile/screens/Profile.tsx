@@ -28,7 +28,7 @@ export default function ProfileScreen() {
     </Card>
     <Section title="Make yourself at home" />
     <Card style={{ paddingVertical: 4 }}>
-      <SettingsRow icon="user" title="Account information" description="Your local workspace details" onPress={() => open('account')} />
+      <SettingsRow icon="user" title="Account information" description="Your account, sync & device backups" onPress={() => open('account')} />
       <SettingsRow icon="sliders" title="App settings" description="Balance privacy & manage jobs" onPress={() => open('settings')} />
       <SettingsRow icon="bell" title="Notifications" description="Device settings & availability" onPress={() => open('notifications')} />
       <SettingsRow icon="sun" title="Appearance" description={`${data.preferences.theme} theme`} onPress={() => open('appearance')} />

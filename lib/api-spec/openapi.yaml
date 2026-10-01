@@ -11,6 +11,109 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /auth/register:
+    post:
+      operationId: registerDailyAccount
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RegistrationInput" }
+      responses:
+        "201":
+          description: Account created with an empty workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/Throttled" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+  /auth/login:
+    post:
+      operationId: loginDailyAccount
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CredentialsInput" }
+      responses:
+        "200":
+          description: Authenticated account and workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "429": { $ref: "#/components/responses/Throttled" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+  /auth/me:
+    get:
+      operationId: getDailyAccount
+      tags: [auth]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Current account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Account" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+  /auth/logout:
+    post:
+      operationId: logoutDailyAccount
+      tags: [auth]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Bearer session revoked }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+  /workspace:
+    get:
+      operationId: getDailyWorkspace
+      tags: [workspace]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Entire owner-scoped workspace
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkspaceSnapshot" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
+    put:
+      operationId: saveDailyWorkspace
+      tags: [workspace]
+      security: [{ bearerAuth: [] }]
+      description: |
+        Atomically replace the authenticated owner's workspace if revision matches.
+        Retries of a committed mutationId return its original snapshot before the
+        revision check. Reusing the ID for a different payload is a conflict.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/WorkspaceInput" }
+      responses:
+        "200":
+          description: Committed snapshot (or original committed retry)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/WorkspaceSnapshot" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/Throttled" }
+        "500": { $ref: "#/components/responses/InternalError" }
+        "503": { $ref: "#/components/responses/Unavailable" }
   /healthz:
     get:
       operationId: healthCheck
@@ -25,7 +128,195 @@ paths:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
 components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer }
+  responses:
+    BadRequest:
+      description: Invalid input
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiFailure" }
+    Unauthorized:
+      description: Invalid credentials or missing, expired, or revoked session
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiFailure" }
+    Conflict:
+      description: Email exists, workspace revision changed, or mutation ID reused
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiFailure" }
+    Throttled:
+      description: Rate limit reached; wait before retrying
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiFailure" }
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiFailure" }
+    Unavailable:
+      description: Database temporarily unavailable
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiFailure" }
   schemas:
+    ApiFailure:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    CredentialsInput:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: { type: string, minLength: 3, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+    RegistrationInput:
+      type: object
+      additionalProperties: false
+      required: [email, password, name]
+      properties:
+        email: { type: string, minLength: 3, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 128 }
+        name: { type: string, minLength: 1, maxLength: 60 }
+    Account:
+      type: object
+      required: [id, email, createdAt]
+      properties:
+        id: { type: string }
+        email: { type: string }
+        createdAt: { type: string }
+    AuthResult:
+      type: object
+      required: [token, account, snapshot]
+      properties:
+        token: { type: string }
+        account: { $ref: "#/components/schemas/Account" }
+        snapshot: { $ref: "#/components/schemas/WorkspaceSnapshot" }
+    WorkspaceSnapshot:
+      type: object
+      required: [workspace, revision, updatedAt]
+      properties:
+        workspace: { $ref: "#/components/schemas/Store" }
+        revision: { type: integer, minimum: 0, maximum: 2147483647 }
+        updatedAt: { type: string }
+    WorkspaceInput:
+      type: object
+      additionalProperties: false
+      required: [workspace, revision, mutationId]
+      properties:
+        workspace: { $ref: "#/components/schemas/Store" }
+        revision: { type: integer, minimum: 0, maximum: 2147483646 }
+        mutationId: { type: string, minLength: 8, maxLength: 128, pattern: "^[A-Za-z0-9_-]+$" }
+    Store:
+      type: object
+      additionalProperties: false
+      required: [version, name, entered, preferences, jobs, selectedJob, active, tasks, transactions, sessions, days]
+      properties:
+        version: { type: integer, enum: [1] }
+        name: { type: string, minLength: 1, maxLength: 60 }
+        entered: { type: boolean }
+        preferences: { $ref: "#/components/schemas/Preferences" }
+        jobs:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/Job" }
+        selectedJob: { type: string, maxLength: 128 }
+        active:
+          anyOf:
+            - $ref: "#/components/schemas/ActiveShift"
+            - type: "null"
+        tasks:
+          type: array
+          maxItems: 10000
+          items: { $ref: "#/components/schemas/Task" }
+        transactions:
+          type: array
+          maxItems: 10000
+          items: { $ref: "#/components/schemas/Transaction" }
+        sessions:
+          type: array
+          maxItems: 10000
+          items: { $ref: "#/components/schemas/Session" }
+        days:
+          type: array
+          maxItems: 10000
+          items: { $ref: "#/components/schemas/CalendarEntry" }
+    Preferences:
+      type: object
+      additionalProperties: false
+      required: [theme, hideHomeBalance, avatarColor]
+      properties:
+        theme: { type: string, enum: [Light, Dark, System] }
+        hideHomeBalance: { type: boolean }
+        avatarColor: { type: string, enum: [Coral, Stone, Charcoal] }
+    Job:
+      type: object
+      additionalProperties: false
+      required: [id, name, description, icon, normal, overtime]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 128 }
+        name: { type: string, minLength: 1, maxLength: 50 }
+        description: { type: string, maxLength: 100 }
+        icon: { type: string, enum: [coffee, laptop, store, briefcase] }
+        normal: { type: number, minimum: 0.01, maximum: 100000 }
+        overtime: { type: number, minimum: 0.01, maximum: 100000 }
+    ActiveShift:
+      type: object
+      additionalProperties: false
+      required: [jobId, start, normal, overtime]
+      properties:
+        jobId: { type: string, minLength: 1, maxLength: 128 }
+        start: { type: number, minimum: 0, maximum: 7258118400000 }
+        normal: { type: number, minimum: 0.01, maximum: 100000 }
+        overtime: { type: number, minimum: 0.01, maximum: 100000 }
+    Session:
+      type: object
+      additionalProperties: false
+      required: [id, jobId, start, end, normal, overtime]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 128 }
+        jobId: { type: string, minLength: 1, maxLength: 128 }
+        start: { type: number, minimum: 0, maximum: 7258118400000 }
+        end: { type: number, minimum: 0, maximum: 7258118400000 }
+        normal: { type: number, minimum: 0.01, maximum: 100000 }
+        overtime: { type: number, minimum: 0.01, maximum: 100000 }
+    Task:
+      type: object
+      additionalProperties: false
+      required: [id, title, due, priority, done]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 128 }
+        title: { type: string, minLength: 1, maxLength: 160 }
+        due: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+        priority: { type: string, enum: [Low, Medium, High] }
+        done: { type: boolean }
+    Transaction:
+      type: object
+      additionalProperties: false
+      required: [id, kind, title, amount, category, date, note]
+      properties:
+        id: { type: string, minLength: 1, maxLength: 128 }
+        kind: { type: string, enum: [income, expense] }
+        title: { type: string, minLength: 1, maxLength: 120 }
+        amount: { type: number, exclusiveMinimum: 0, maximum: 1000000000000 }
+        category: { type: string, minLength: 1, maxLength: 80 }
+        date: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+        note: { type: string, maxLength: 500 }
+    CalendarEntry:
+      type: object
+      additionalProperties: false
+      required: [jobId, date, status]
+      properties:
+        jobId: { type: string, minLength: 1, maxLength: 128 }
+        date: { type: string, pattern: "^\\d{4}-\\d{2}-\\d{2}$" }
+        status: { type: string, enum: [Work, Day off, Vacation, Sick] }
     HealthStatus:
       type: object
       properties:

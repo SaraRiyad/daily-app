@@ -3,7 +3,7 @@ import { View, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { fonts } from '@/constants/colors';
 import { useDailyUI } from '@/hooks/useDailyUI';
-import { useDaily } from '@/state/DailyContext';
+import { useDaily, useDailyEdit } from '@/state/DailyContext';
 import { balance, dateLabel, dayKey, money, taskSchema, transactionSchema, uid, type Task, type Transaction } from '@/state/model';
 import { Button, Card, Choices, Confirm, DateField, Empty, Field, Icon, IconButton, Metric, Note, Page, Section, Title, Txt, go } from '@/components/daily/UI';
 
@@ -26,6 +26,7 @@ export function TasksScreen() {
   </Page>;
 }
 export function TaskFormScreen({ id }: { id?: string }) {
+  useDailyEdit();
   const { s } = useDailyUI();
   const { data, update } = useDaily(), task = data.tasks.find(t => t.id === id);
   const [title, setTitle] = useState(task?.title || ''), [due, setDue] = useState(task?.due || dayKey()), [priority, setPriority] = useState<Task['priority']>(task?.priority || 'Medium');
@@ -34,14 +35,14 @@ export function TaskFormScreen({ id }: { id?: string }) {
   const save = () => {
     const value = taskSchema.safeParse({ id: task?.id || uid(), title: title.trim(), due, priority, done: task?.done || false });
     if (!value.success) { setError('Give your task a name and a valid due date.'); return; }
-    update(d => ({ ...d, tasks: task ? d.tasks.map(t => t.id === task.id ? value.data : t) : [...d.tasks, value.data] })); router.back();
+    if (update(d => ({ ...d, tasks: task ? d.tasks.map(t => t.id === task.id ? value.data : t) : [...d.tasks, value.data] }))) router.back();
   };
   return <Page title={task ? 'Edit task' : 'Add task'} back><Title sub="Small plans make a little more room.">{task ? 'Make it work for you.' : 'What’s on your mind?'}</Title>
     <Field label="Task name" placeholder="e.g. Pick up a few groceries" value={title} onChangeText={setTitle} maxLength={160} autoFocus />
     <DateField label="Due date" value={due} onChange={setDue} /><Txt style={s.label}>Priority</Txt><Choices values={['Low', 'Medium', 'High']} value={priority} onChange={setPriority} />
     {Boolean(error) && <Note error>{error}</Note>}<Button onPress={save} icon="check" testID="save-task">Save task</Button>
-    {task && <><Button secondary icon={task.done ? 'rotate-ccw' : 'check-circle'} onPress={() => { update(d => ({ ...d, tasks: d.tasks.map(t => t.id === task.id ? { ...t, done: !t.done } : t) })); router.back(); }}>{task.done ? 'Mark as incomplete' : 'Mark as completed'}</Button><Button danger icon="trash-2" onPress={() => setConfirm(true)}>Delete task</Button></>}
-    {confirm && <Confirm title="Let this task go?" message={`“${task?.title}” will be removed permanently.`} onClose={() => setConfirm(false)} onConfirm={() => { update(d => ({ ...d, tasks: d.tasks.filter(t => t.id !== id) })); setConfirm(false); router.back(); }} />}
+    {task && <><Button secondary icon={task.done ? 'rotate-ccw' : 'check-circle'} onPress={() => { if (update(d => ({ ...d, tasks: d.tasks.map(t => t.id === task.id ? { ...t, done: !t.done } : t) }))) router.back(); }}>{task.done ? 'Mark as incomplete' : 'Mark as completed'}</Button><Button danger icon="trash-2" onPress={() => setConfirm(true)}>Delete task</Button></>}
+    {confirm && <Confirm title="Let this task go?" message={`“${task?.title}” will be removed permanently.`} onClose={() => setConfirm(false)} onConfirm={() => { if (update(d => ({ ...d, tasks: d.tasks.filter(t => t.id !== id) }))) { setConfirm(false); router.back(); } }} />}
   </Page>;
 }
 export function TransactionRow({ item }: { item: Transaction }) {
@@ -71,15 +72,17 @@ export function MoneyListScreen({ kind }: { kind: Transaction['kind'] }) {
   </Page>;
 }
 export function MoneyFormScreen({ kind, id }: { kind: Transaction['kind']; id?: string }) {
+  useDailyEdit();
   const { s } = useDailyUI();
   const { data, update } = useDaily(), item = data.transactions.find(t => t.id === id);
   const categories = kind === 'income' ? ['Salary', 'Freelance', 'Gift', 'Other'] : ['Food', 'Transportation', 'Shopping', 'Bills', 'Other'];
   const [amount, setAmount] = useState(item?.amount.toString() || ''), [title, setTitle] = useState(item?.title || ''), [category, setCategory] = useState(item?.category || categories[0]), [date, setDate] = useState(item?.date || dayKey()), [note, setNote] = useState(item?.note || '');
   const [error, setError] = useState(''), [confirm, setConfirm] = useState(false);
+  if (id && !item) return <Page title="Money entry" back><Empty title="This entry is no longer here." text="It may have been deleted. Your unsaved text has not been added as a new entry." action={() => router.back()} label="Go back" /></Page>;
   const save = () => {
     const value = transactionSchema.safeParse({ id: item?.id || uid(), kind, title: title.trim(), amount: Number(amount), category, date, note: note.trim() });
     if (!value.success) { setError('Enter a positive amount (up to ₪1 trillion), a source or description, and a valid date.'); return; }
-    update(d => ({ ...d, transactions: item ? d.transactions.map(t => t.id === item.id ? value.data : t) : [...d.transactions, value.data] })); router.back();
+    if (update(d => ({ ...d, transactions: item ? d.transactions.map(t => t.id === item.id ? value.data : t) : [...d.transactions, value.data] }))) router.back();
   };
   return <Page title={`${item ? 'Edit' : 'Add'} ${kind}`} back><Title sub={kind === 'income' ? 'Only record money you have received.' : 'Keep the little things in view.'}>{kind === 'income' ? 'Something coming in.' : 'Where did it go?'}</Title>
     <Field label="Amount · ₪" placeholder="0.00" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} maxLength={16} style={{ fontSize: 32, minHeight: 76 }} />
@@ -87,6 +90,6 @@ export function MoneyFormScreen({ kind, id }: { kind: Transaction['kind']; id?: 
     <Txt style={s.label}>Category</Txt><Choices values={categories} value={category} onChange={setCategory} /><DateField value={date} onChange={setDate} /><Field label="Note · optional" multiline value={note} onChangeText={setNote} placeholder="Anything you want to remember" maxLength={500} />
     {Boolean(error) && <Note error>{error}</Note>}<Button onPress={save} icon="check" testID="save-transaction">{`Save ${kind}`}</Button>
     {item && <Button danger icon="trash-2" onPress={() => setConfirm(true)}>Delete entry</Button>}
-    {confirm && <Confirm title="Delete this entry?" message="This changes your balance. The entry will be permanently removed." onClose={() => setConfirm(false)} onConfirm={() => { update(d => ({ ...d, transactions: d.transactions.filter(t => t.id !== id) })); setConfirm(false); router.back(); }} />}
+    {confirm && <Confirm title="Delete this entry?" message="This changes your balance. The entry will be permanently removed." onClose={() => setConfirm(false)} onConfirm={() => { if (update(d => ({ ...d, transactions: d.transactions.filter(t => t.id !== id) }))) { setConfirm(false); router.back(); } }} />}
   </Page>;
 }

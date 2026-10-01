@@ -9,6 +9,7 @@ import { useDailyUI } from '@/hooks/useDailyUI';
 import { useColors, useDailyTheme } from '@/hooks/useColors';
 import { useDaily } from '@/state/DailyContext';
 import { dateLabel, dayKey, parseDay, type Job } from '@/state/model';
+import { exportWorkspace } from '@/state/export';
 
 export type IconName = ComponentProps<typeof Feather>['name'];
 export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: string }) { const c = useColors(); return <Feather name={name} size={size} color={color ?? c.foreground} />; }
@@ -38,13 +39,46 @@ export function DetailRow({ label, value }: { label: string; value: string }) { 
 export function JobIcon({ job }: { job: Pick<Job, 'icon'> }) { const { c, s } = useDailyUI(); return <View style={[s.jobIcon, job.icon === 'laptop' && { backgroundColor: c.secondary }]}>{job.icon === 'store' || job.icon === 'laptop' ? <MaterialCommunityIcons name={job.icon === 'store' ? 'storefront-outline' : 'laptop'} size={23} color={c.foreground} /> : <Icon name={job.icon} color={c.accentForeground} size={22} />}</View>; }
 export function Page({ title, children, home = false, back = false, right }: { title?: string; children: React.ReactNode; home?: boolean; back?: boolean; right?: React.ReactNode }) {
   const { s } = useDailyUI();
-  const insets = useDailyInsets(), { error, retry } = useDaily();
+  const insets = useDailyInsets(), { locked } = useDaily();
   return <View style={[s.page, { paddingTop: insets.top }]}>
     <View style={s.header}>{home ? <Brand /> : <View style={[s.row, { flex: 1 }]}>{back && <IconButton name="arrow-left" label="Go back" onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} />}<Txt style={s.section}>{title}</Txt></View>}
       {right || (home ? <IconButton name="user" label="Open profile" onPress={() => go('profile')} /> : null)}
     </View>
-    {Boolean(error) && <View style={{ paddingHorizontal: 20 }}><Note error>{error}</Note><Button secondary onPress={retry}>Retry saving</Button></View>}
-    <KeyboardAwareScrollViewCompat bottomOffset={24} showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" contentContainerStyle={[s.content, { paddingBottom: 28 + (back ? insets.bottom : 0) }]}>{children}</KeyboardAwareScrollViewCompat>
+    <SyncNotice />
+    <KeyboardAwareScrollViewCompat bottomOffset={24} showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" contentContainerStyle={[s.content, { paddingBottom: 28 + (back ? insets.bottom : 0) }]}><View pointerEvents={locked ? 'none' : 'auto'} style={{ gap: 16 }}>{children}</View></KeyboardAwareScrollViewCompat>
+  </View>;
+}
+export function SyncNotice() {
+  const { c, s } = useDailyUI();
+  const { data, account, error, retry, syncStatus, conflict, rejected, reloadServer, retryCorrectedDraft, locked } = useDaily();
+  const [resolving, setResolving] = useState(false), [message, setMessage] = useState('');
+  const exportDraft = async () => {
+    try { setMessage(await exportWorkspace(data, account?.email ?? '')); }
+    catch (e) { setMessage(e instanceof Error ? e.message : 'The backup could not be exported. Your draft is unchanged.'); }
+  };
+  const reload = async () => {
+    setMessage('');
+    await reloadServer();
+    setResolving(false);
+  };
+  const corrected = async () => {
+    try { await retryCorrectedDraft(); setResolving(false); }
+    catch (e) { setMessage(e instanceof Error ? e.message : 'The corrected save could not start. Your draft is kept.'); }
+  };
+  return <View style={{ paddingHorizontal: 20, paddingBottom: 4, gap: 5 }}>
+    <View accessibilityLiveRegion="polite" style={[s.row, { gap: 6 }]}>
+      <Icon name={syncStatus === 'Saved' ? 'check' : syncStatus === 'Error' || conflict ? 'alert-circle' : 'cloud'} size={12} color={error ? c.destructive : c.mutedForeground} />
+      <Txt muted style={{ fontSize: 11 }}>{syncStatus === 'Saved' ? 'Saved to your account' : syncStatus === 'Saving' ? 'Saving to your account…' : syncStatus === 'Pending' ? 'Pending · kept on this device' : conflict ? 'Conflict · device draft kept' : 'Sync error · not confirmed saved'}</Txt>
+    </View>
+    {Boolean(error) && <><Note error>{error}</Note><Button secondary disabled={locked} onPress={conflict || rejected ? () => { setMessage(''); setResolving(true); } : retry}>{conflict ? 'Resolve workspace conflict' : rejected ? 'Resolve rejected save' : 'Retry sync'}</Button></>}
+    {resolving && <Sheet title="Keep your work safe" onClose={() => setResolving(false)}>
+      <Note error>Reloading replaces this device’s unsynced draft with the server copy. Daily first keeps a separate account-scoped backup, including any running shift. It does not merge conflicting records.</Note>
+      <Button secondary icon="download" disabled={locked} onPress={() => void exportDraft()}>Export my current draft</Button>
+      {rejected && <><Note>The old request was definitively rejected without a commit. After you correct the draft, Daily can archive that rejected request and save your latest draft with a new mutation ID. Uncertain network requests are never replaced this way.</Note><Button disabled={locked} testID="retry-corrected-draft" onPress={() => void corrected()}>Back up & save corrected draft</Button></>}
+      {Boolean(message) && <Txt muted style={{ fontSize: 12, lineHeight: 18 }}>{message}</Txt>}
+      <Button disabled={locked} icon="refresh-cw" testID="confirm-reload-server" onPress={() => void reload()}>Keep backup & reload server</Button>
+      <Button secondary disabled={locked} onPress={() => setResolving(false)}>Keep editing this draft</Button>
+    </Sheet>}
   </View>;
 }
 // `screen` is reserved for nested navigation by Expo Router / React Navigation.
@@ -58,18 +92,23 @@ export function Sheet({ title, children, onClose }: { title: string; children: R
 }
 export function Confirm({ title, message, onConfirm, onClose }: { title: string; message: string; onConfirm: () => void; onClose: () => void }) { return <Sheet title={title} onClose={onClose}><Note error>{message}</Note><Button danger onPress={onConfirm} icon="trash-2">Delete permanently</Button><Button secondary onPress={onClose}>Keep it</Button></Sheet>; }
 export function LogoutSheet({ onClose }: { onClose: () => void }) {
-  const { data, update } = useDaily();
-  return <Sheet title="Log out of Daily?" onClose={onClose}>
-    <Txt>Your jobs, tasks, money and preferences stay on this device. You can return to them from sign in.</Txt>
-    {data.active && <Note>Your running shift will keep going while you’re logged out. Come back to clock out.</Note>}
-    <Txt muted style={{ fontSize: 12, lineHeight: 18 }}>This leaves your local workspace. There is no connected account or server session to sign out of.</Txt>
-    <Button icon="log-out" testID="confirm-logout" onPress={() => {
+  const { data, logout, busy } = useDaily();
+  const [error, setError] = useState('');
+  const confirm = async () => {
+    setError('');
+    try {
+      await logout();
       onClose();
-      // Protected stack screens are removed when the entry flag becomes false.
-      update(d => ({ ...d, entered: false }));
       router.replace({ pathname: '/', params: { step: 'signin' } });
-    }}>Log out</Button>
-    <Button secondary onPress={onClose}>Cancel</Button>
+    } catch (e) { setError(e instanceof Error ? e.message : 'Logout could not complete. Your session and draft are kept.'); }
+  };
+  return <Sheet title="Log out of Daily?" onClose={onClose}>
+    <Txt>Daily will finish saving your jobs, tasks, money and preferences before revoking this account’s session.</Txt>
+    {data.active && <Note>Your running shift will keep going while you’re logged out. Come back to clock out.</Note>}
+    <Txt muted style={{ fontSize: 12, lineHeight: 18 }}>If saving or revocation fails, logout pauses without discarding your workspace. Signing in to the same account restores the saved running shift.</Txt>
+    {Boolean(error) && <Note error>{error}</Note>}
+    <Button icon="log-out" disabled={busy} testID="confirm-logout" onPress={() => void confirm()}>{busy ? 'Saving & signing out…' : 'Log out safely'}</Button>
+    <Button secondary disabled={busy} onPress={onClose}>Cancel</Button>
   </Sheet>;
 }
 export function DateField({ value, onChange, label = 'Date' }: { value: string; onChange: (s: string) => void; label?: string }) {
