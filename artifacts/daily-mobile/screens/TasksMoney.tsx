@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { View, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { theme as c, fonts } from '@/constants/colors';
+import { fonts } from '@/constants/colors';
+import { useDailyUI } from '@/hooks/useDailyUI';
 import { useDaily } from '@/state/DailyContext';
 import { balance, dateLabel, dayKey, money, taskSchema, transactionSchema, uid, type Task, type Transaction } from '@/state/model';
-import { Button, Card, Choices, Confirm, DateField, Empty, Field, Icon, IconButton, Metric, Note, Page, Section, Title, Txt, go, s } from '@/components/daily/UI';
+import { Button, Card, Choices, Confirm, DateField, Empty, Field, Icon, IconButton, Metric, Note, Page, Section, Title, Txt, go } from '@/components/daily/UI';
 
 export function TaskRow({ task }: { task: Task }) {
+  const { c, s } = useDailyUI();
   const { update } = useDaily();
   return <View style={[s.row, { paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border }]}>
     <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: task.done }} accessibilityLabel={`Complete ${task.title}`} testID={`toggle-task-${task.id}`} onPress={() => update(d => ({ ...d, tasks: d.tasks.map(t => t.id === task.id ? { ...t, done: !t.done } : t) }))} style={{ width: 42, height: 46, justifyContent: 'center', alignItems: 'center' }}><Icon name={task.done ? 'check-circle' : 'circle'} color={task.done ? c.primary : c.mutedForeground} size={23} /></Pressable>
@@ -14,6 +16,7 @@ export function TaskRow({ task }: { task: Task }) {
   </View>;
 }
 export function TasksScreen() {
+  const { c, s } = useDailyUI();
   const { data, now } = useDaily(), [filter, setFilter] = useState<'Today' | 'Upcoming' | 'Completed'>('Today');
   const today = dayKey(now);
   const tasks = data.tasks.filter(t => filter === 'Completed' ? t.done : !t.done && (filter === 'Today' ? t.due <= today : t.due > today)).sort((a, b) => a.due.localeCompare(b.due));
@@ -23,6 +26,7 @@ export function TasksScreen() {
   </Page>;
 }
 export function TaskFormScreen({ id }: { id?: string }) {
+  const { s } = useDailyUI();
   const { data, update } = useDaily(), task = data.tasks.find(t => t.id === id);
   const [title, setTitle] = useState(task?.title || ''), [due, setDue] = useState(task?.due || dayKey()), [priority, setPriority] = useState<Task['priority']>(task?.priority || 'Medium');
   const [error, setError] = useState(''), [confirm, setConfirm] = useState(false);
@@ -41,12 +45,14 @@ export function TaskFormScreen({ id }: { id?: string }) {
   </Page>;
 }
 export function TransactionRow({ item }: { item: Transaction }) {
+  const { c, s } = useDailyUI();
   return <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${item.title}, ${money(item.amount)}`} onPress={() => go(`${item.kind}-form`, item.id)} style={[s.row, { paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: c.border }]}>
     <View style={[s.jobIcon, { backgroundColor: item.kind === 'income' ? c.peach : c.secondary }]}><Icon name={item.kind === 'income' ? 'arrow-down-left' : 'arrow-up-right'} color={item.kind === 'income' ? c.accentForeground : c.foreground} /></View>
     <View style={{ flex: 1, gap: 4 }}><Txt style={{ fontFamily: fonts.medium, fontSize: 14 }}>{item.title}</Txt><Txt muted style={{ fontSize: 11 }}>{item.category} · {dateLabel(item.date)}</Txt></View><Txt style={{ fontFamily: fonts.medium, fontSize: 16 }}>{item.kind === 'income' ? '+' : '−'}{money(item.amount)}</Txt>
   </Pressable>;
 }
 export function MoneyScreen() {
+  const { c, s } = useDailyUI();
   const { data } = useDaily(), b = balance(data);
   return <Page title="Your money"><Title sub="A clear picture. A little peace of mind.">Know where you stand.</Title>
     <Card style={{ backgroundColor: c.charcoal, borderColor: c.charcoal, padding: 24, gap: 22 }}><View style={s.between}><Txt style={{ color: c.subtleOnCharcoal }}>Your remaining balance</Txt><Icon name="credit-card" color={c.primary} /></View><Txt style={{ fontSize: 42, fontFamily: fonts.medium, color: c.onCharcoal, letterSpacing: -1.5 }}>{money(b.remaining)}</Txt><View style={[s.row, { paddingTop: 18, borderTopWidth: 1, borderTopColor: c.mutedForeground }]}><Metric dark label="Total received" value={money(b.income)} /><Metric dark label="Total spent" value={money(b.expense)} /></View></Card>
@@ -65,6 +71,7 @@ export function MoneyListScreen({ kind }: { kind: Transaction['kind'] }) {
   </Page>;
 }
 export function MoneyFormScreen({ kind, id }: { kind: Transaction['kind']; id?: string }) {
+  const { s } = useDailyUI();
   const { data, update } = useDaily(), item = data.transactions.find(t => t.id === id);
   const categories = kind === 'income' ? ['Salary', 'Freelance', 'Gift', 'Other'] : ['Food', 'Transportation', 'Shopping', 'Bills', 'Other'];
   const [amount, setAmount] = useState(item?.amount.toString() || ''), [title, setTitle] = useState(item?.title || ''), [category, setCategory] = useState(item?.category || categories[0]), [date, setDate] = useState(item?.date || dayKey()), [note, setNote] = useState(item?.note || '');

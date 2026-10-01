@@ -14,9 +14,11 @@ import {
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { DailyProvider } from '@/state/DailyContext';
+import { Platform } from 'react-native';
+import * as SystemUI from 'expo-system-ui';
+import { DailyProvider, useDaily } from '@/state/DailyContext';
 import { StoreGate } from '@/components/daily/StoreGate';
-import { theme } from '@/constants/colors';
+import { useDailyTheme } from '@/hooks/useColors';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -24,12 +26,22 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  const { data } = useDaily();
+  const { colors, isDark } = useDailyTheme();
+  useEffect(() => {
+    if (Platform.OS !== 'web') void SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
+  }, [colors.background]);
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: theme.background }, animation: 'slide_from_right' }}>
+    <>
+    <StatusBar style={isDark ? 'light' : 'dark'} />
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background }, animation: 'slide_from_right' }}>
       <Stack.Screen name="index" />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="detail" />
+      <Stack.Protected guard={data.entered}>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="detail" />
+      </Stack.Protected>
     </Stack>
+    </>
   );
 }
 
@@ -51,18 +63,15 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <GestureHandlerRootView style={{ flex: 1 }}>
             <KeyboardProvider>
               <DailyProvider>
-                <StatusBar style="dark" />
-                <StoreGate><RootLayoutNav /></StoreGate>
+                <ErrorBoundary><StoreGate><RootLayoutNav /></StoreGate></ErrorBoundary>
               </DailyProvider>
             </KeyboardProvider>
           </GestureHandlerRootView>
         </QueryClientProvider>
-      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

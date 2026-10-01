@@ -3,9 +3,11 @@ import { Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useDailyInsets } from '@/hooks/useDailyInsets';
 import { useDaily } from '@/state/DailyContext';
-import { theme as c, fonts } from '@/constants/colors';
+import { fonts } from '@/constants/colors';
+import { useColors } from '@/hooks/useColors';
 
 export default function TabLayout() {
+  const c = useColors();
   const { data } = useDaily(), insets = useDailyInsets();
   if (!data.entered) return <Redirect href={{ pathname: '/', params: { step: 'signin' } }} />;
   return <Tabs screenOptions={{

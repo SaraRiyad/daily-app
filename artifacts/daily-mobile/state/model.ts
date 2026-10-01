@@ -23,8 +23,15 @@ const timestamp = z.number().finite().nonnegative().max(8640000000000000);
 const activeSchema = z.object({ jobId: id, start: timestamp, ...rates });
 export const sessionSchema = activeSchema.extend({ id, end: timestamp }).refine(v => v.end >= v.start);
 const statuses = z.enum(['Work', 'Day off', 'Vacation', 'Sick']);
+export const preferencesSchema = z.object({
+  theme: z.enum(['Light', 'Dark', 'System']).default('Light'),
+  hideHomeBalance: z.boolean().default(false),
+  avatarColor: z.enum(['Coral', 'Stone', 'Charcoal']).default('Coral'),
+});
+export type Preferences = z.infer<typeof preferencesSchema>;
 export const storeSchema = z.object({
   version: z.literal(1), name: z.string().trim().min(1).max(60), entered: z.boolean(),
+  preferences: preferencesSchema.default({ theme: 'Light', hideHomeBalance: false, avatarColor: 'Coral' }),
   jobs: z.array(jobSchema), selectedJob: z.string(), active: activeSchema.nullable(),
   tasks: z.array(taskSchema), transactions: z.array(transactionSchema), sessions: z.array(sessionSchema),
   days: z.array(z.object({ jobId: id, date: day, status: statuses })),
@@ -78,7 +85,7 @@ export function seed(): Store {
     { id: 'coffee', name: 'Coffee Shop', description: 'Good coffee. Familiar faces.', icon: 'coffee', normal: 5, overtime: 7 },
     { id: 'freelance', name: 'Freelance', description: 'My own kind of work', icon: 'laptop', normal: 8, overtime: 10 },
   ];
-  return { version: 1, name: 'Alex', entered: false, jobs, selectedJob: 'coffee', active: null,
+  return { version: 1, name: 'Alex', entered: false, preferences: preferencesSchema.parse({}), jobs, selectedJob: 'coffee', active: null,
     tasks: [
       { id: uid(), title: 'Plan the week ahead', due: dayKey(), priority: 'High', done: false },
       { id: uid(), title: 'Pick up a few groceries', due: dayKey(), priority: 'Medium', done: false },

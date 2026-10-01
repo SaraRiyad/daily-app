@@ -12,7 +12,7 @@ import { useDailyInsets } from '@/hooks/useDailyInsets';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 import { reloadAppAsync } from 'expo';
-import { fonts, theme } from '@/constants/colors';
+import { fonts } from '@/constants/colors';
 
 export type ErrorFallbackProps = {
   error: Error;
@@ -86,6 +86,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
             styles.button,
             {
               backgroundColor: colors.primary,
+              shadowColor: colors.charcoal,
               opacity: pressed ? 0.9 : 1,
               transform: [{ scale: pressed ? 0.98 : 1 }],
             },
@@ -106,7 +107,7 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
           transparent={true}
           onRequestClose={() => setIsModalVisible(false)}
         >
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { backgroundColor: colors.overlay }]}>
             <View
               style={[
                 styles.modalContainer,
@@ -215,7 +216,6 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     paddingHorizontal: 24,
     minWidth: 200,
-    shadowColor: theme.charcoal,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -231,7 +231,6 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: theme.overlay,
     justifyContent: 'flex-end',
   },
   modalContainer: {

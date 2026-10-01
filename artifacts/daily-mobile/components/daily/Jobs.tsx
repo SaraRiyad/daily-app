@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { View, Pressable } from 'react-native';
-import { theme as c, fonts } from '@/constants/colors';
+import { fonts } from '@/constants/colors';
+import { useDailyUI } from '@/hooks/useDailyUI';
 import { useDaily } from '@/state/DailyContext';
 import { exportJob } from '@/state/export';
 import { jobSchema, money, uid, type Job } from '@/state/model';
-import { Button, Card, DetailRow, Field, Icon, JobIcon, Note, Sheet, Txt, s } from './UI';
+import { Button, Card, DetailRow, Field, Icon, JobIcon, Note, Sheet, Txt } from './UI';
 
 export function JobForm({ job, onClose, onSaved }: { job?: Job; onClose: () => void; onSaved?: () => void }) {
+  const { c, s } = useDailyUI();
   const { data, saveJob } = useDaily();
   const [name, setName] = useState(job?.name || ''), [description, setDescription] = useState(job?.description || '');
   const [normal, setNormal] = useState(job?.normal.toString() || ''), [overtime, setOvertime] = useState(job?.overtime.toString() || '');
@@ -29,6 +31,7 @@ export function JobForm({ job, onClose, onSaved }: { job?: Job; onClose: () => v
   </Sheet>;
 }
 export function JobPicker({ dark = false }: { dark?: boolean }) {
+  const { c, s } = useDailyUI();
   const { data, selectJob } = useDaily();
   const [open, setOpen] = useState(false), [adding, setAdding] = useState(false);
   const job = data.jobs.find(j => j.id === data.selectedJob);
@@ -48,6 +51,7 @@ export function JobPicker({ dark = false }: { dark?: boolean }) {
   </>;
 }
 export function DeleteJob({ initialId, onClose, onDeleted }: { initialId?: string; onClose: () => void; onDeleted?: () => void }) {
+  const { c, s } = useDailyUI();
   const { data, deleteJob } = useDaily();
   const [target, setTarget] = useState(initialId || ''), [accepted, setAccepted] = useState(false);
   const [notice, setNotice] = useState(''), [error, setError] = useState(''), [busy, setBusy] = useState(false);

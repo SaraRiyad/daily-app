@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { View, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { theme as c, fonts } from '@/constants/colors';
+import { fonts } from '@/constants/colors';
+import { useDailyUI } from '@/hooks/useDailyUI';
 import { useDaily } from '@/state/DailyContext';
 import { balance, dateLabel, dayKey, duration, money, parseDay, segments, timeLabel, timer, totals, withActive, type DayStatus, type Job } from '@/state/model';
 import { DeleteJob, JobForm, JobPicker } from '@/components/daily/Jobs';
-import { Button, Card, Choices, DetailRow, Empty, Icon, IconButton, JobIcon, Metric, MonthGrid, Note, Page, Section, Title, Txt, go, s, statusColor } from '@/components/daily/UI';
+import { Button, Card, Choices, DetailRow, Empty, Icon, IconButton, JobIcon, Metric, MonthGrid, Note, Page, Section, Title, Txt, go } from '@/components/daily/UI';
 import { TaskRow } from './TasksMoney';
 
 export function WorkCard() {
+  const { c, s } = useDailyUI();
   const { data, now, clockIn, clockOut } = useDaily();
   const total = totals(segments(withActive(data, now)).filter(v => v.date === dayKey(now)));
   return <Card style={{ backgroundColor: c.charcoal, borderColor: c.charcoal, padding: 18, gap: 17 }}><JobPicker dark />
@@ -23,17 +25,19 @@ export function NoJobs() {
   return <><Empty title="A little room for what’s next." text="Add a role to track your shifts and plan your calendar. Your tasks and money are still here." icon="briefcase" action={() => setAdding(true)} label="Add your first job" />{adding && <JobForm onClose={() => setAdding(false)} />}</>;
 }
 export function HomeScreen() {
+  const { c, s } = useDailyUI();
   const { data, now } = useDaily(), today = dayKey(now), h = new Date(now).getHours();
   const tasks = data.tasks.filter(t => t.due === today || (!t.done && t.due < today)), done = tasks.filter(t => t.done).length;
   return <Page home><View style={{ gap: 8 }}><Txt muted style={{ fontSize: 11, letterSpacing: 1.4 }}>{new Date(now).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }).toUpperCase()}</Txt><Title sub="A little order. A little more breathing room.">{`Good ${h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening'}, ${data.name.split(' ')[0]}.`}</Title></View>
     {data.jobs.length ? <WorkCard /> : <NoJobs />}
-    <Pressable onPress={() => router.push('/(tabs)/money')} accessibilityRole="button" accessibilityLabel="View your balance" style={[s.card, s.row, { padding: 17 }]}><View style={s.jobIcon}><Icon name="credit-card" color={c.accentForeground} /></View><View style={{ flex: 1, gap: 3 }}><Txt muted style={{ fontSize: 12 }}>Your balance</Txt><Txt style={{ fontSize: 25, fontFamily: fonts.medium }}>{money(balance(data).remaining)}</Txt></View><Icon name="chevron-right" size={18} /></Pressable>
+    <Pressable onPress={() => router.push('/(tabs)/money')} accessibilityRole="button" accessibilityLabel={data.preferences.hideHomeBalance ? 'Balance hidden. Open Money to view.' : 'View your balance'} style={[s.card, s.row, { padding: 17 }]}><View style={s.jobIcon}><Icon name={data.preferences.hideHomeBalance ? 'eye-off' : 'credit-card'} color={c.accentForeground} /></View><View style={{ flex: 1, gap: 3 }}><Txt muted style={{ fontSize: 12 }}>Your balance</Txt><Txt style={{ fontSize: 25, fontFamily: fonts.medium }}>{data.preferences.hideHomeBalance ? 'Hidden' : money(balance(data).remaining)}</Txt></View><Icon name="chevron-right" size={18} /></Pressable>
     <View><Section title="Today’s little list" action={() => router.push('/(tabs)/tasks')} /><View style={[s.between, { marginTop: 4 }]}><Txt muted style={{ fontSize: 12 }}>{done} of {tasks.length} completed</Txt><Txt muted style={{ fontSize: 11 }}>One step at a time</Txt></View><View accessibilityRole="progressbar" accessibilityLabel="Today's task completion" accessibilityValue={{ min: 0, max: Math.max(1, tasks.length), now: done }} style={{ height: 5, borderRadius: 3, backgroundColor: c.border, marginVertical: 13 }}><View style={{ width: `${tasks.length ? done / tasks.length * 100 : 0}%`, backgroundColor: c.primary, borderRadius: 3, height: 5 }} /></View>
       {tasks.length ? [...tasks].sort((a, b) => Number(a.done) - Number(b.done)).slice(0, 3).map(t => <TaskRow key={t.id} task={t} />) : <Empty title="Your day has a little space." text="A fresh list, a fresh start." label="Add a task" action={() => go('task-form')} />}
     </View>
   </Page>;
 }
 export function WorkScreen() {
+  const { c, s } = useDailyUI();
   const { data, selectJob } = useDaily();
   const [adding, setAdding] = useState(false), [editing, setEditing] = useState<Job | undefined>(), [deleting, setDeleting] = useState(false);
   return <Page title="Work & jobs" right={<IconButton name="trash-2" label="Manage and delete jobs" onPress={() => setDeleting(true)} />}><Title sub="Different jobs. One place to keep track.">Your time, well spent.</Title>
@@ -48,6 +52,7 @@ export function WorkScreen() {
   </Page>;
 }
 function JobStats({ job, start, end }: { job: Job; start: string; end: string }) {
+  const { c, s } = useDailyUI();
   const { data, now } = useDaily();
   const rows = segments(withActive(data, now)).filter(v => v.jobId === job.id && v.date >= start && v.date < end), total = totals(rows);
   const days = data.days.filter(v => v.jobId === job.id && v.date >= start && v.date < end);
@@ -55,6 +60,7 @@ function JobStats({ job, start, end }: { job: Job; start: string; end: string })
   return <Card><View style={s.row}><Metric label="Working hours" value={duration(total.total)} /><Metric label="Estimated earnings" value={money(total.earnings)} /></View><View style={[s.row, { borderTopWidth: 1, borderTopColor: c.border, paddingTop: 14 }]}><Metric label="Days worked" value={String(worked.size)} /><Metric label="Days off · planned & taken" value={String(days.filter(v => v.status === 'Day off').length)} /></View><View style={s.between}><Txt muted style={{ fontSize: 12 }}>Vacation · {days.filter(v => v.status === 'Vacation').length}</Txt><Txt muted style={{ fontSize: 12 }}>Sick · {days.filter(v => v.status === 'Sick').length}</Txt></View></Card>;
 }
 export function JobDetailScreen({ id }: { id?: string }) {
+  const { s } = useDailyUI();
   const { data, now, selectJob, clockIn, clockOut } = useDaily(), job = data.jobs.find(j => j.id === (id || data.selectedJob));
   const [editing, setEditing] = useState(false), [deleting, setDeleting] = useState(false);
   if (!job) return <Page title="Job details" back><NoJobs /></Page>;
@@ -71,14 +77,16 @@ export function JobDetailScreen({ id }: { id?: string }) {
   </Page>;
 }
 export function TimerScreen() {
+  const { c, s } = useDailyUI();
   const { data, now, clockOut } = useDaily(), job = data.jobs.find(j => j.id === data.active?.jobId);
   if (!data.active || !job) return <Page title="Working now" back><Empty title="You’re off the clock." text="Choose a job to start your next shift." action={() => router.replace('/(tabs)/work')} label="Go to Work" /></Page>;
   const total = totals(segments(withActive(data, now)).filter(v => v.sessionId === 'active'));
   return <Page title="Working now" back><JobPicker /><View style={{ alignItems: 'center', gap: 16, paddingVertical: 16 }}><View style={{ backgroundColor: c.accent, paddingVertical: 7, paddingHorizontal: 15, borderRadius: 20 }}><Txt style={{ color: c.accentForeground, fontSize: 12 }}>You’re on the clock</Txt></View><Txt style={s.title}>{job.name}</Txt><View style={{ width: 256, height: 256, borderRadius: 128, borderWidth: 6, borderColor: c.accent, alignItems: 'center', justifyContent: 'center', gap: 12 }}><Icon name="clock" color={c.accentForeground} size={25} /><Txt muted style={{ fontSize: 12 }}>Time working</Txt><Txt style={{ fontSize: 43, letterSpacing: -1, fontFamily: fonts.medium, fontVariant: ['tabular-nums'] }}>{timer(now - data.active.start)}</Txt><Txt muted style={{ fontSize: 12 }}>Started at {timeLabel(data.active.start)}</Txt></View></View><Card><View style={s.row}><Metric label="Session estimate" value={money(total.earnings)} /><Metric label="Session overtime" value={duration(total.overtime)} /></View></Card>
-    <Button icon="square" testID="timer-clock-out" onPress={() => { const v = clockOut(); if (v) router.replace({ pathname: '/detail', params: { screen: 'summary', id: v.id } }); }}>Clock out</Button><Note>Your timestamp-based timer keeps going between screens and restarts. Clock out before switching jobs.</Note><Button secondary onPress={() => router.replace('/(tabs)')}>Back to my day</Button>
+    <Button icon="square" testID="timer-clock-out" onPress={() => { const v = clockOut(); if (v) router.replace({ pathname: '/detail', params: { view: 'summary', id: v.id } }); }}>Clock out</Button><Note>Your timestamp-based timer keeps going between screens and restarts. Clock out before switching jobs.</Note><Button secondary onPress={() => router.replace('/(tabs)')}>Back to my day</Button>
   </Page>;
 }
 export function SummaryScreen({ id }: { id?: string }) {
+  const { c, s } = useDailyUI();
   const { data, error } = useDaily(), session = data.sessions.find(v => v.id === id);
   if (!session) return <Page title="Session summary" back><Empty title="No session here just yet." text="Your next completed shift will have its own summary." action={() => router.replace('/(tabs)/work')} label="Go to Work" /></Page>;
   const total = totals(segments(data.sessions).filter(v => v.sessionId === session.id)), job = data.jobs.find(j => j.id === session.jobId);
@@ -89,6 +97,7 @@ export function SummaryScreen({ id }: { id?: string }) {
   </Page>;
 }
 export function HistoryScreen({ id }: { id?: string }) {
+  const { c, s } = useDailyUI();
   const { data } = useDaily(), job = data.jobs.find(j => j.id === (id || data.selectedJob));
   const [filter, setFilter] = useState<'Day' | 'Week' | 'Month'>('Week'), [anchor, setAnchor] = useState(dayKey());
   if (!job) return <Page title="Work history" back><NoJobs /></Page>;
@@ -108,6 +117,7 @@ export function HistoryScreen({ id }: { id?: string }) {
   </Page>;
 }
 export function CalendarScreen({ id, back = false }: { id?: string; back?: boolean }) {
+  const { c, s, statusColor } = useDailyUI();
   const { data, now, update } = useDaily(), job = data.jobs.find(j => j.id === (id || data.selectedJob));
   const [selected, setSelected] = useState(dayKey()), [month, setMonth] = useState(dayKey().slice(0, 7) + '-01'), [saved, setSaved] = useState(false);
   if (!job) return <Page title="Your calendar" back={back}><NoJobs /></Page>;

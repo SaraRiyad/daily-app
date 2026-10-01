@@ -2,15 +2,17 @@ import { useCallback, useState } from 'react';
 import { BackHandler, Platform, View } from 'react-native';
 import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useDailyInsets } from '@/hooks/useDailyInsets';
-import { theme as c, fonts } from '@/constants/colors';
+import { fonts } from '@/constants/colors';
+import { useDailyUI } from '@/hooks/useDailyUI';
 import { useDaily } from '@/state/DailyContext';
 import { money } from '@/state/model';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { JobForm } from '@/components/daily/Jobs';
-import { Brand, Button, Card, Field, Icon, IconButton, JobIcon, Note, Txt, s } from '@/components/daily/UI';
+import { Brand, Button, Card, Field, Icon, IconButton, JobIcon, Note, Txt } from '@/components/daily/UI';
 
 type Step = 'welcome' | 'signin' | 'signup' | 'jobs';
 export default function EntranceScreen() {
+  const { c, s } = useDailyUI();
   const { data, update, error: storageError, retry } = useDaily(), insets = useDailyInsets();
   const { step: requestedStep } = useLocalSearchParams<{ step?: string }>();
   const [step, setStep] = useState<Step>(requestedStep === 'signin' ? 'signin' : 'welcome'), [name, setName] = useState(data.name === 'Alex' ? '' : data.name);
