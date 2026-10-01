@@ -59,7 +59,7 @@ export function MoneyScreen() {
     <View style={s.row}><View style={{ flex: 1 }}><Button icon="plus" onPress={() => go('income-form')}>Income</Button></View><View style={{ flex: 1 }}><Button secondary icon="minus" onPress={() => go('expense-form')}>Expense</Button></View></View>
     <View style={s.row}><View style={{ flex: 1 }}><Button secondary onPress={() => go('income')}>View income</Button></View><View style={{ flex: 1 }}><Button secondary onPress={() => go('expense')}>View expenses</Button></View></View>
     <Section title="The latest ins & outs" />{data.transactions.length ? <Card style={{ paddingHorizontal: 13, paddingVertical: 2 }}>{[...data.transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5).map(t => <TransactionRow key={t.id} item={t} />)}</Card> : <Empty title="A fresh start for your money." text="Add income when it arrives and expenses as they happen." icon="credit-card" />}
-    <Note>Work earnings are estimates, not money received. Add income when you get paid. All amounts are in Israeli shekels (₪).</Note>
+    <Note>Work earnings are estimates, not money received. Add income when you get paid. All amounts are in shekels (₪).</Note>
   </Page>;
 }
 export function MoneyListScreen({ kind }: { kind: Transaction['kind'] }) {
