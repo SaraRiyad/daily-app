@@ -9,7 +9,7 @@ export const parseDay = (v: string) => new Date(`${v}T12:00:00`);
 export const validDay = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && Number.isFinite(+parseDay(v)) && dayKey(parseDay(v)) === v;
 export const dateLabel = (v: string) => parseDay(v).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 export const timeLabel = (v: number) => new Date(v).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-export const money = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
+export const money = (v: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ILS', currencyDisplay: 'narrowSymbol' }).format(v);
 export function duration(ms: number) { const m = Math.floor(Math.max(0, ms) / 60000); return `${Math.floor(m / 60)}h ${m % 60}m`; }
 export function timer(ms: number) { const s = Math.floor(Math.max(0, ms) / 1000); return `${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor(s / 60) % 60).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }
 const id = z.string().min(1);

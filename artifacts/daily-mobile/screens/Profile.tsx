@@ -15,7 +15,7 @@ export default function ProfileScreen() {
   const [message, setMessage] = useState('');
   const open = (value: Panel) => { setMessage(''); setPanel(value); };
   const close = () => setPanel(null);
-  return <Page title="Profile / Account" back hideExit>
+  return <Page title="Profile / Account" back>
     <View style={{ alignItems: 'center', gap: 12, paddingTop: 8, paddingBottom: 16 }}>
       <ProfileAvatar />
       <Txt style={[s.title, { textAlign: 'center' }]}>{data.name}</Txt>

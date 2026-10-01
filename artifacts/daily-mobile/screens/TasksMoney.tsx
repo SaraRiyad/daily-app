@@ -59,7 +59,7 @@ export function MoneyScreen() {
     <View style={s.row}><View style={{ flex: 1 }}><Button icon="plus" onPress={() => go('income-form')}>Income</Button></View><View style={{ flex: 1 }}><Button secondary icon="minus" onPress={() => go('expense-form')}>Expense</Button></View></View>
     <View style={s.row}><View style={{ flex: 1 }}><Button secondary onPress={() => go('income')}>View income</Button></View><View style={{ flex: 1 }}><Button secondary onPress={() => go('expense')}>View expenses</Button></View></View>
     <Section title="The latest ins & outs" />{data.transactions.length ? <Card style={{ paddingHorizontal: 13, paddingVertical: 2 }}>{[...data.transactions].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5).map(t => <TransactionRow key={t.id} item={t} />)}</Card> : <Empty title="A fresh start for your money." text="Add income when it arrives and expenses as they happen." icon="credit-card" />}
-    <Note>Work earnings are estimates, not money received. Add income when you get paid. All amounts are in USD.</Note>
+    <Note>Work earnings are estimates, not money received. Add income when you get paid. All amounts are in Israeli shekels (₪).</Note>
   </Page>;
 }
 export function MoneyListScreen({ kind }: { kind: Transaction['kind'] }) {
@@ -78,11 +78,11 @@ export function MoneyFormScreen({ kind, id }: { kind: Transaction['kind']; id?: 
   const [error, setError] = useState(''), [confirm, setConfirm] = useState(false);
   const save = () => {
     const value = transactionSchema.safeParse({ id: item?.id || uid(), kind, title: title.trim(), amount: Number(amount), category, date, note: note.trim() });
-    if (!value.success) { setError('Enter a positive amount (up to $1 trillion), a source or description, and a valid date.'); return; }
+    if (!value.success) { setError('Enter a positive amount (up to ₪1 trillion), a source or description, and a valid date.'); return; }
     update(d => ({ ...d, transactions: item ? d.transactions.map(t => t.id === item.id ? value.data : t) : [...d.transactions, value.data] })); router.back();
   };
   return <Page title={`${item ? 'Edit' : 'Add'} ${kind}`} back><Title sub={kind === 'income' ? 'Only record money you have received.' : 'Keep the little things in view.'}>{kind === 'income' ? 'Something coming in.' : 'Where did it go?'}</Title>
-    <Field label="Amount · USD" placeholder="0.00" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} maxLength={16} style={{ fontSize: 32, minHeight: 76 }} />
+    <Field label="Amount · ₪" placeholder="0.00" keyboardType="decimal-pad" value={amount} onChangeText={setAmount} maxLength={16} style={{ fontSize: 32, minHeight: 76 }} />
     <Field label={kind === 'income' ? 'Source' : 'What was it for?'} value={title} onChangeText={setTitle} placeholder={kind === 'income' ? 'e.g. Coffee Shop paycheck' : 'e.g. Weekly groceries'} maxLength={120} />
     <Txt style={s.label}>Category</Txt><Choices values={categories} value={category} onChange={setCategory} /><DateField value={date} onChange={setDate} /><Field label="Note · optional" multiline value={note} onChangeText={setNote} placeholder="Anything you want to remember" maxLength={500} />
     {Boolean(error) && <Note error>{error}</Note>}<Button onPress={save} icon="check" testID="save-transaction">{`Save ${kind}`}</Button>

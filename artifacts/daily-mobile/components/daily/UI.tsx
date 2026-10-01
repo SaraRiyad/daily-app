@@ -36,20 +36,15 @@ export function Empty({ title, text, action, label = 'Add a job', icon = 'sun' }
 export function Metric({ label, value, dark = false }: { label: string; value: string; dark?: boolean }) { const c = useColors(); return <View style={{ flex: 1, gap: 5, minWidth: 0 }}><Txt style={{ fontSize: 12, color: dark ? c.subtleOnCharcoal : c.mutedForeground }}>{label}</Txt><Txt style={{ fontSize: 23, fontFamily: fonts.medium, color: dark ? c.onCharcoal : c.foreground }}>{value}</Txt></View>; }
 export function DetailRow({ label, value }: { label: string; value: string }) { const { c, s } = useDailyUI(); return <View style={[s.between, { gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: c.border }]}><Txt muted style={{ fontSize: 13, flex: 1 }}>{label}</Txt><Txt style={{ fontSize: 14, fontFamily: fonts.medium, flexShrink: 1, textAlign: 'right' }}>{value}</Txt></View>; }
 export function JobIcon({ job }: { job: Pick<Job, 'icon'> }) { const { c, s } = useDailyUI(); return <View style={[s.jobIcon, job.icon === 'laptop' && { backgroundColor: c.secondary }]}>{job.icon === 'store' || job.icon === 'laptop' ? <MaterialCommunityIcons name={job.icon === 'store' ? 'storefront-outline' : 'laptop'} size={23} color={c.foreground} /> : <Icon name={job.icon} color={c.accentForeground} size={22} />}</View>; }
-export function Page({ title, children, home = false, back = false, right, hideExit = false }: { title?: string; children: React.ReactNode; home?: boolean; back?: boolean; right?: React.ReactNode; hideExit?: boolean }) {
+export function Page({ title, children, home = false, back = false, right }: { title?: string; children: React.ReactNode; home?: boolean; back?: boolean; right?: React.ReactNode }) {
   const { s } = useDailyUI();
-  const [logout, setLogout] = useState(false);
   const insets = useDailyInsets(), { error, retry } = useDaily();
   return <View style={[s.page, { paddingTop: insets.top }]}>
     <View style={s.header}>{home ? <Brand /> : <View style={[s.row, { flex: 1 }]}>{back && <IconButton name="arrow-left" label="Go back" onPress={() => router.canGoBack() ? router.back() : router.replace('/(tabs)')} />}<Txt style={s.section}>{title}</Txt></View>}
       {right || (home ? <IconButton name="user" label="Open profile" onPress={() => go('profile')} /> : null)}
     </View>
-    {!hideExit && <View style={{ paddingHorizontal: 20, paddingBottom: 10 }}>
-      <Button secondary icon="arrow-left" testID="back-to-signin" onPress={() => setLogout(true)}>Back to sign in</Button>
-    </View>}
     {Boolean(error) && <View style={{ paddingHorizontal: 20 }}><Note error>{error}</Note><Button secondary onPress={retry}>Retry saving</Button></View>}
     <KeyboardAwareScrollViewCompat bottomOffset={24} showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag" contentContainerStyle={[s.content, { paddingBottom: 28 + (back ? insets.bottom : 0) }]}>{children}</KeyboardAwareScrollViewCompat>
-    {logout && <LogoutSheet onClose={() => setLogout(false)} />}
   </View>;
 }
 // `screen` is reserved for nested navigation by Expo Router / React Navigation.

@@ -16,7 +16,7 @@ export function JobForm({ job, onClose, onSaved }: { job?: Job; onClose: () => v
   const locked = !!job && data.active?.jobId === job.id;
   const save = () => {
     const result = jobSchema.safeParse({ id: job?.id || uid(), name: name.trim(), description: description.trim(), normal: Number(normal), overtime: Number(overtime), icon });
-    if (!result.success) { setError('Add a name and rates from $0.01 to $100,000. Overtime must be at least the normal rate.'); return; }
+    if (!result.success) { setError('Add a name and rates from ₪0.01 to ₪100,000. Overtime must be at least the normal rate.'); return; }
     if (data.jobs.some(j => j.id !== job?.id && j.name.toLowerCase() === name.trim().toLowerCase())) { setError('You already have a job with this name. Try another.'); return; }
     saveJob(result.data); onClose(); onSaved?.();
   };
@@ -25,7 +25,7 @@ export function JobForm({ job, onClose, onSaved }: { job?: Job; onClose: () => v
     <Txt style={s.label}>Choose an icon</Txt><View style={s.row}>{(['briefcase', 'coffee', 'laptop', 'store'] as const).map(v => <Pressable key={v} accessibilityRole="button" accessibilityLabel={`${v} icon`} accessibilityState={{ selected: icon === v }} onPress={() => setIcon(v)} style={{ padding: 4, borderWidth: 1, borderColor: icon === v ? c.primary : c.transparent, borderRadius: 18 }}><JobIcon job={{ icon: v }} /></Pressable>)}</View>
     <Field label="Job name" value={name} onChangeText={setName} maxLength={50} placeholder="e.g. Weekend bookstore" />
     <Field label="Description · optional" value={description} onChangeText={setDescription} maxLength={100} placeholder="A little about this role" />
-    <View style={[s.row, { alignItems: 'flex-start' }]}><View style={{ flex: 1 }}><Field label="Normal / hour · USD" keyboardType="decimal-pad" value={normal} onChangeText={setNormal} editable={!locked} placeholder="8.00" /></View><View style={{ flex: 1 }}><Field label="Overtime / hour · USD" keyboardType="decimal-pad" value={overtime} onChangeText={setOvertime} editable={!locked} placeholder="10.00" /></View></View>
+    <View style={[s.row, { alignItems: 'flex-start' }]}><View style={{ flex: 1 }}><Field label="Normal / hour · ₪" keyboardType="decimal-pad" value={normal} onChangeText={setNormal} editable={!locked} placeholder="8.00" /></View><View style={{ flex: 1 }}><Field label="Overtime / hour · ₪" keyboardType="decimal-pad" value={overtime} onChangeText={setOvertime} editable={!locked} placeholder="10.00" /></View></View>
     <Note>{locked ? 'Rates are locked during a running shift. Clock out before changing them.' : 'Overtime starts after 8 hours per job, per local day. Changes apply only to new shifts; past rates are preserved.'}</Note>
     {Boolean(error) && <Note error>{error}</Note>}<Button onPress={save} icon={job ? 'check' : 'plus'} testID="save-job">{job ? 'Save changes' : 'Add job'}</Button>
   </Sheet>;

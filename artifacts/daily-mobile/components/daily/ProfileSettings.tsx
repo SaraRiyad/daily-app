@@ -88,7 +88,7 @@ export function AppSettingsSheet({ onClose, onManage }: { onClose: () => void; o
         onValueChange={hideHomeBalance => update(d => ({ ...d, preferences: { ...d.preferences, hideHomeBalance } }))}
         trackColor={{ false: c.border, true: c.primary }} thumbColor={c.card} />
     </View></Card>
-    <Card><DetailRow label="Currency" value="USD" /><DetailRow label="Overtime starts" value="After 8h / job / local day" /></Card>
+    <Card><DetailRow label="Currency" value="Israeli shekel · ₪ (ILS)" /><DetailRow label="Overtime starts" value="After 8h / job / local day" /></Card>
     <Txt muted style={{ fontSize: 12, lineHeight: 18 }}>Earnings are estimates, not payroll or tax advice. Record income separately when paid.</Txt>
     <Button secondary icon="trash-2" onPress={onManage}>Manage & delete jobs</Button>
     <Button secondary onPress={onClose}>Done</Button>

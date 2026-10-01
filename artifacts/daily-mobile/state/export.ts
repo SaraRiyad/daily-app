@@ -8,9 +8,9 @@ export function jobExport(job: Job, data: Store) {
   const portions = segments(sessions);
   return {
     format: 'Daily job export', version: 1, exportedAt: new Date().toISOString(),
-    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, currency: 'USD', displayName: data.name, job,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, currency: 'ILS', displayName: data.name, job,
     sessions: sessions.map(s => ({ ...s, clockInISO: new Date(s.start).toISOString(), clockOutISO: new Date(s.end).toISOString(), portions: portions.filter(p => p.sessionId === s.id) })),
-    daily: [...new Set(portions.map(p => p.date))].map(date => ({ date, ...totals(portions.filter(p => p.date === date)), unit: 'milliseconds; earnings in USD' })),
+    daily: [...new Set(portions.map(p => p.date))].map(date => ({ date, ...totals(portions.filter(p => p.date === date)), unit: 'milliseconds; earnings in ILS' })),
     calendar: data.days.filter(d => d.jobId === job.id),
     note: 'Estimates before tax. Eight normal hours per job per local day. Historical rates are snapshotted in each session. Tasks and received income/expenses are independent.',
   };
