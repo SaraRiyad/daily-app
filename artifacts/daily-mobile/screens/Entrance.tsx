@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { BackHandler, Platform, Pressable, View } from 'react-native';
+import { BackHandler, Platform, View } from 'react-native';
 import { Redirect, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useDailyInsets } from '@/hooks/useDailyInsets';
 import { theme as c, fonts } from '@/constants/colors';
@@ -51,7 +51,7 @@ export default function EntranceScreen() {
           <View style={[s.row, { gap: 9, flexWrap: 'wrap' }]}><Icon name="briefcase" color={c.primary} size={16} /><Txt style={{ color: c.subtleOnCharcoal, fontSize: 12 }}>Your work.</Txt><Icon name="credit-card" color={c.primary} size={16} /><Txt style={{ color: c.subtleOnCharcoal, fontSize: 12 }}>Your money.</Txt><Icon name="heart" color={c.primary} size={16} /></View>
         </View>
         <View style={{ gap: 10, paddingTop: 2 }}><Txt style={{ fontSize: 38, lineHeight: 43, letterSpacing: -1.2, fontFamily: fonts.medium }}>Make room{'\n'}for your day.</Txt><Txt muted style={{ lineHeight: 24 }}>Your jobs, little to-dos and money.{'\n'}Together, without the overwhelm.</Txt></View>
-        <View style={{ gap: 11 }}><Button onPress={() => move('signup')} icon="arrow-right" testID="get-started">Get started · Sign up</Button><Button secondary onPress={() => move('signin')} testID="open-signin">I already have an account</Button><Pressable onPress={enter} accessibilityRole="button" testID="explore-demo" style={{ minHeight: 44, justifyContent: 'center' }}><Txt style={{ color: c.accentForeground, textAlign: 'center', fontSize: 14 }}>Explore the demo instead</Txt></Pressable></View>
+        <View style={{ gap: 11 }}><Button onPress={() => move('signup')} icon="arrow-right" testID="get-started">Get started · Sign up</Button><Button secondary onPress={() => move('signin')} testID="open-signin">I already have an account</Button></View>
       </> : step === 'jobs' ? <>
         <View style={s.row}><View style={{ height: 4, width: 33, backgroundColor: c.primary, borderRadius: 3 }} /><View style={{ height: 4, width: 33, backgroundColor: c.primary, borderRadius: 3 }} /></View>
         <View style={{ gap: 10 }}><Txt style={[s.title, { fontSize: 36, lineHeight: 40 }]}>Different hats.{'\n'}One place.</Txt><Txt muted style={{ lineHeight: 23 }}>Add the work you do. You can add more, edit or delete jobs later.</Txt></View>
